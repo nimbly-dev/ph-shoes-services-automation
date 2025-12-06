@@ -74,6 +74,7 @@ module "github_oidc_role" {
   existing_oidc_provider_arn = var.existing_oidc_provider_arn
   attach_ecr_public_policy   = var.attach_ecr_public_policy
   additional_policy_json     = var.additional_iam_policy_json
+  managed_policy_arns        = var.github_oidc_managed_policy_arns
   tags                       = local.common_tags
 }
 
@@ -121,6 +122,7 @@ module "frontend_alb" {
 locals {
   frontend_alb_security_group_id = try(module.frontend_alb[0].alb_security_group_id, null)
   frontend_target_group_arn      = try(module.frontend_alb[0].target_group_arn, "")
+  frontend_service_security_group_id = try(module.frontend_service[0].security_group_id, null)
 }
 
 module "frontend_service" {
@@ -141,7 +143,17 @@ module "frontend_service" {
   secrets                     = var.frontend_secrets
   assign_public_ip            = true
   aws_region                  = var.aws_region
-  ingress_security_group_map  = local.frontend_alb_security_group_id == null ? {} : { alb = local.frontend_alb_security_group_id }
   target_group_arn            = local.frontend_target_group_arn
   tags                        = merge(local.common_tags, { Service = "frontend-spa" })
+}
+
+resource "aws_security_group_rule" "frontend_alb_to_service" {
+  count = local.frontend_enabled && local.frontend_alb_security_group_id != null && local.frontend_service_security_group_id != null ? 1 : 0
+
+  type                     = "ingress"
+  from_port                = var.frontend_container_port
+  to_port                  = var.frontend_container_port
+  protocol                 = "tcp"
+  security_group_id        = local.frontend_service_security_group_id
+  source_security_group_id = local.frontend_alb_security_group_id
 }

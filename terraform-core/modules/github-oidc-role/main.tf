@@ -77,3 +77,10 @@ resource "aws_iam_role_policy" "additional" {
   role   = aws_iam_role.github.id
   policy = var.additional_policy_json
 }
+
+resource "aws_iam_role_policy_attachment" "managed" {
+  for_each = toset(var.managed_policy_arns)
+
+  role       = aws_iam_role.github.name
+  policy_arn = each.value
+}

@@ -43,6 +43,12 @@ variable "additional_policy_json" {
   default     = null
 }
 
+variable "managed_policy_arns" {
+  description = "Managed policies to attach to the GitHub OIDC role"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Tags applied to IAM resources"
   type        = map(string)

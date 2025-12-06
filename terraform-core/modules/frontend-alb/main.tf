@@ -37,8 +37,12 @@ resource "aws_security_group" "alb" {
   tags = merge(var.tags, { Name = "${var.name}-alb-sg" })
 }
 
+locals {
+  truncated_name = substr(var.name, 0, min(29, length(var.name)))
+}
+
 resource "aws_lb_target_group" "this" {
-  name        = "${var.name}-tg"
+  name        = "${local.truncated_name}-tg"
   port        = var.target_group_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id

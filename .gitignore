@@ -27,7 +27,8 @@ replay_pid*
 .idea
 /.terraform
 *.exe
-
+LICENSE.txt
+.terraform
 *.env
 .env
 

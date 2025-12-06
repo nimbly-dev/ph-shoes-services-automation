@@ -75,13 +75,16 @@ variable "additional_ecr_repositories" {
 variable "github_owner" {
   description = "GitHub organization or user that hosts the workflows"
   type        = string
-  default     = "nimbly"
+  default     = "nimbly-dev"
 }
 
 variable "github_repositories" {
   description = "List of GitHub repositories allowed to assume the deployment role"
   type        = list(string)
-  default     = ["ph-shoes-services-automation"]
+  default     = [
+    "ph-shoes-services-automation",
+    "ph-shoes-data-spa",
+  ]
 }
 
 variable "github_subjects" {

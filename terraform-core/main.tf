@@ -141,7 +141,7 @@ module "frontend_service" {
   secrets                     = var.frontend_secrets
   assign_public_ip            = true
   aws_region                  = var.aws_region
-  ingress_security_group_ids  = local.frontend_alb_security_group_id == null ? [] : [local.frontend_alb_security_group_id]
+  ingress_security_group_map  = local.frontend_alb_security_group_id == null ? {} : { alb = local.frontend_alb_security_group_id }
   target_group_arn            = local.frontend_target_group_arn
   tags                        = merge(local.common_tags, { Service = "frontend-spa" })
 }

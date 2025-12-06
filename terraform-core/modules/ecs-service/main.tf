@@ -6,7 +6,7 @@ locals {
     }
   ]
 
-  has_custom_ingress = length(var.ingress_rules) > 0 || length(var.ingress_security_group_ids) > 0
+  has_custom_ingress = length(var.ingress_rules) > 0 || length(var.ingress_security_group_map) > 0
   default_ingress    = local.has_custom_ingress ? [] : [
     {
       from_port   = var.container_port
@@ -50,7 +50,7 @@ resource "aws_security_group" "service" {
 }
 
 resource "aws_security_group_rule" "ingress_sg" {
-  for_each = toset(var.ingress_security_group_ids)
+  for_each = var.ingress_security_group_map
 
   type                     = "ingress"
   from_port                = var.container_port

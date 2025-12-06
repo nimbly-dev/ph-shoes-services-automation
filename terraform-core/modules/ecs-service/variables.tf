@@ -82,10 +82,10 @@ variable "ingress_rules" {
   default = []
 }
 
-variable "ingress_security_group_ids" {
-  description = "Security groups allowed to reach the service"
-  type        = list(string)
-  default     = []
+variable "ingress_security_group_map" {
+  description = "Map of security groups allowed to reach the service keyed by a stable name"
+  type        = map(string)
+  default     = {}
 }
 
 variable "additional_security_group_ids" {

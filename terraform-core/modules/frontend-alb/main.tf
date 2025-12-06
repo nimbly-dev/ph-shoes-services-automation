@@ -1,15 +1,21 @@
+locals {
+  alb_name    = substr("${var.name}-alb", 0, 32)
+  alb_sg_name = substr("${var.name}-alb-sg", 0, 32)
+  tg_name     = substr("${var.name}-tg", 0, 32)
+}
+
 resource "aws_lb" "this" {
-  name               = "${var.name}-alb"
+  name               = local.alb_name
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets            = var.public_subnet_ids
   idle_timeout       = 60
 
-  tags = merge(var.tags, { Name = "${var.name}-alb" })
+  tags = merge(var.tags, { Name = local.alb_name })
 }
 
 resource "aws_security_group" "alb" {
-  name        = "${var.name}-alb-sg"
+  name        = local.alb_sg_name
   description = "ALB security group"
   vpc_id      = var.vpc_id
 
@@ -34,15 +40,11 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(var.tags, { Name = "${var.name}-alb-sg" })
-}
-
-locals {
-  truncated_name = substr(var.name, 0, min(29, length(var.name)))
+  tags = merge(var.tags, { Name = local.alb_sg_name })
 }
 
 resource "aws_lb_target_group" "this" {
-  name        = "${local.truncated_name}-tg"
+  name        = local.tg_name
   port        = var.target_group_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id

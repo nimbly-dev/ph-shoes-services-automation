@@ -119,3 +119,157 @@ variable "additional_iam_policy_json" {
   type        = string
   default     = null
 }
+
+variable "frontend_enable" {
+  description = "Whether to provision the frontend ECS service + ALB"
+  type        = bool
+  default     = false
+}
+
+variable "frontend_container_image" {
+  description = "Container image for the frontend SPA service"
+  type        = string
+  default     = ""
+}
+
+variable "frontend_container_port" {
+  description = "Frontend container port exposed to the ALB"
+  type        = number
+  default     = 80
+}
+
+variable "frontend_desired_count" {
+  description = "Desired task count for the frontend service"
+  type        = number
+  default     = 0
+}
+
+variable "frontend_cpu" {
+  type    = number
+  default = 256
+}
+
+variable "frontend_memory" {
+  type    = number
+  default = 512
+}
+
+variable "frontend_environment" {
+  description = "Map of environment variables injected into the frontend"
+  type        = map(string)
+  default     = {}
+}
+
+variable "frontend_secrets" {
+  description = "List of secrets for the frontend container"
+  type = list(object({
+    name      = string
+    valueFrom = string
+  }))
+  default = []
+}
+
+variable "frontend_domain_name" {
+  description = "Root domain (e.g., phshoesproject.com)"
+  type        = string
+  default     = "phshoesproject.com"
+}
+
+variable "frontend_record_name" {
+  description = "Record name ('' for apex, e.g., 'www')"
+  type        = string
+  default     = ""
+}
+
+variable "frontend_hosted_zone_id" {
+  description = "Route53 hosted zone ID for the domain"
+  type        = string
+  default     = ""
+}
+
+variable "frontend_certificate_arn" {
+  description = "ACM certificate ARN for HTTPS"
+  type        = string
+  default     = ""
+}
+
+variable "frontend_health_check_path" {
+  description = "ALB health check path"
+  type        = string
+  default     = "/"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for the ECS VPC"
+  type        = string
+  default     = "10.50.0.0/16"
+}
+
+variable "public_subnet_cidrs" {
+  description = "CIDR blocks for public subnets (must match AZ count)"
+  type        = list(string)
+  default     = ["10.50.1.0/24", "10.50.2.0/24"]
+}
+
+variable "availability_zones" {
+  description = "Optional AZ override for the subnets"
+  type        = list(string)
+  default     = []
+}
+
+variable "ecs_cluster_name" {
+  description = "Name of the shared ECS cluster"
+  type        = string
+  default     = "ph-shoes-services-ecs"
+}
+
+variable "ecs_instance_type" {
+  description = "EC2 instance type for ECS hosts"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "ecs_min_size" {
+  type    = number
+  default = 1
+}
+
+variable "ecs_max_size" {
+  type    = number
+  default = 2
+}
+
+variable "ecs_desired_capacity" {
+  type    = number
+  default = 2
+}
+
+variable "ecs_instance_key_name" {
+  description = "Optional SSH key for ECS instances"
+  type        = string
+  default     = ""
+}
+
+variable "ecs_instance_volume_size" {
+  description = "Root volume size for ECS instances (GB)"
+  type        = number
+  default     = 30
+}
+
+variable "ecs_instance_ingress_rules" {
+  description = "Ingress rules for ECS instance security group"
+  type = list(object({
+    from_port   = number
+    to_port     = number
+    protocol    = string
+    cidr_blocks = list(string)
+  }))
+  default = [
+    {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  ]
+}

@@ -6,7 +6,7 @@ locals {
     }
   ]
 
-  has_custom_ingress = length(var.ingress_rules) > 0 || length(var.ingress_security_group_map) > 0
+  has_custom_ingress = length(var.ingress_rules) > 0
   default_ingress    = local.has_custom_ingress ? [] : [
     {
       from_port   = var.container_port
@@ -47,17 +47,6 @@ resource "aws_security_group" "service" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = merge(var.tags, { Name = "${var.service_name}-sg" })
-}
-
-resource "aws_security_group_rule" "ingress_sg" {
-  for_each = var.ingress_security_group_map
-
-  type                     = "ingress"
-  from_port                = var.container_port
-  to_port                  = var.container_port
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.service.id
-  source_security_group_id = each.value
 }
 
 resource "aws_iam_role" "execution" {

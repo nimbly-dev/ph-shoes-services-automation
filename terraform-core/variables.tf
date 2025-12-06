@@ -123,6 +123,12 @@ variable "additional_iam_policy_json" {
   default     = null
 }
 
+variable "github_oidc_managed_policy_arns" {
+  description = "Managed IAM policy ARNs attached to the GitHub deployment role"
+  type        = list(string)
+  default     = ["arn:aws:iam::aws:policy/AdministratorAccess"]
+}
+
 variable "frontend_enable" {
   description = "Whether to provision the frontend ECS service + ALB"
   type        = bool

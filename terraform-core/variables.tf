@@ -181,18 +181,6 @@ variable "frontend_record_name" {
   default     = ""
 }
 
-variable "frontend_hosted_zone_id" {
-  description = "Route53 hosted zone ID for the domain"
-  type        = string
-  default     = ""
-}
-
-variable "frontend_certificate_arn" {
-  description = "ACM certificate ARN for HTTPS"
-  type        = string
-  default     = ""
-}
-
 variable "frontend_health_check_path" {
   description = "ALB health check path"
   type        = string

@@ -1,3 +1,14 @@
+data "aws_acm_certificate" "frontend" {
+  domain      = var.frontend_domain_name
+  statuses    = ["ISSUED"]
+  most_recent = true
+}
+
+data "aws_route53_zone" "frontend" {
+  name         = "${var.frontend_domain_name}."
+  private_zone = false
+}
+
 locals {
   frontend_repo_objects = [
     for name in var.frontend_repositories : {
@@ -19,7 +30,7 @@ locals {
     var.additional_ecr_repositories,
   )
 
-  frontend_enabled = var.frontend_enable && var.frontend_container_image != "" && var.frontend_certificate_arn != "" && var.frontend_hosted_zone_id != ""
+  frontend_enabled = var.frontend_enable && var.frontend_container_image != ""
 }
 
 module "project_resource_group" {
@@ -98,9 +109,9 @@ module "frontend_alb" {
   name                = "${var.project_name}-frontend"
   vpc_id              = module.network.vpc_id
   public_subnet_ids   = module.network.public_subnet_ids
-  certificate_arn     = var.frontend_certificate_arn
+  certificate_arn     = data.aws_acm_certificate.frontend.arn
   domain_name         = var.frontend_domain_name
-  hosted_zone_id      = var.frontend_hosted_zone_id
+  hosted_zone_id      = data.aws_route53_zone.frontend.zone_id
   record_name         = var.frontend_record_name
   target_group_port   = var.frontend_container_port
   health_check_path   = var.frontend_health_check_path

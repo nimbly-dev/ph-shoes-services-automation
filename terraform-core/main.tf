@@ -122,7 +122,6 @@ module "frontend_alb" {
 locals {
   frontend_alb_security_group_id = try(module.frontend_alb[0].alb_security_group_id, null)
   frontend_target_group_arn      = try(module.frontend_alb[0].target_group_arn, "")
-  frontend_service_security_group_id = try(module.frontend_service[0].security_group_id, null)
 }
 
 module "frontend_service" {
@@ -148,12 +147,12 @@ module "frontend_service" {
 }
 
 resource "aws_security_group_rule" "frontend_alb_to_service" {
-  count = local.frontend_enabled && local.frontend_alb_security_group_id != null && local.frontend_service_security_group_id != null ? 1 : 0
+  count = local.frontend_enabled ? 1 : 0
 
   type                     = "ingress"
   from_port                = var.frontend_container_port
   to_port                  = var.frontend_container_port
   protocol                 = "tcp"
-  security_group_id        = local.frontend_service_security_group_id
-  source_security_group_id = local.frontend_alb_security_group_id
+  security_group_id        = module.frontend_service[count.index].security_group_id
+  source_security_group_id = module.frontend_alb[count.index].alb_security_group_id
 }

@@ -18,6 +18,8 @@ locals {
     local.backend_repo_objects,
     var.additional_ecr_repositories,
   )
+
+  frontend_enabled = var.frontend_enable && var.frontend_container_image != "" && var.frontend_certificate_arn != "" && var.frontend_hosted_zone_id != ""
 }
 
 module "project_resource_group" {
@@ -62,4 +64,73 @@ module "github_oidc_role" {
   attach_ecr_public_policy   = var.attach_ecr_public_policy
   additional_policy_json     = var.additional_iam_policy_json
   tags                       = local.common_tags
+}
+
+module "network" {
+  source = "./modules/network"
+
+  vpc_cidr            = var.vpc_cidr
+  public_subnet_cidrs = var.public_subnet_cidrs
+  availability_zones  = var.availability_zones
+  tags                = local.common_tags
+}
+
+module "ecs_cluster" {
+  source = "./modules/ecs-cluster"
+
+  cluster_name            = var.ecs_cluster_name
+  vpc_id                  = module.network.vpc_id
+  subnet_ids              = module.network.public_subnet_ids
+  instance_type           = var.ecs_instance_type
+  min_size                = var.ecs_min_size
+  max_size                = var.ecs_max_size
+  desired_capacity        = var.ecs_desired_capacity
+  key_name                = var.ecs_instance_key_name
+  instance_volume_size    = var.ecs_instance_volume_size
+  instance_ingress_rules  = var.ecs_instance_ingress_rules
+  tags                    = local.common_tags
+}
+
+module "frontend_alb" {
+  count = local.frontend_enabled ? 1 : 0
+  source = "./modules/frontend-alb"
+
+  name                = "${var.project_name}-frontend"
+  vpc_id              = module.network.vpc_id
+  public_subnet_ids   = module.network.public_subnet_ids
+  certificate_arn     = var.frontend_certificate_arn
+  domain_name         = var.frontend_domain_name
+  hosted_zone_id      = var.frontend_hosted_zone_id
+  record_name         = var.frontend_record_name
+  target_group_port   = var.frontend_container_port
+  health_check_path   = var.frontend_health_check_path
+  tags                = local.common_tags
+}
+
+locals {
+  frontend_alb_security_group_id = try(module.frontend_alb[0].alb_security_group_id, null)
+  frontend_target_group_arn      = try(module.frontend_alb[0].target_group_arn, "")
+}
+
+module "frontend_service" {
+  count = local.frontend_enabled ? 1 : 0
+  source = "./modules/ecs-service"
+
+  service_name                = "${var.project_name}-frontend"
+  cluster_arn                 = module.ecs_cluster.cluster_arn
+  capacity_provider_name      = module.ecs_cluster.capacity_provider_name
+  subnet_ids                  = module.network.public_subnet_ids
+  vpc_id                      = module.network.vpc_id
+  container_image             = var.frontend_container_image
+  container_port              = var.frontend_container_port
+  cpu                         = var.frontend_cpu
+  memory                      = var.frontend_memory
+  desired_count               = var.frontend_desired_count
+  environment                 = var.frontend_environment
+  secrets                     = var.frontend_secrets
+  assign_public_ip            = true
+  aws_region                  = var.aws_region
+  ingress_security_group_ids  = local.frontend_alb_security_group_id == null ? [] : [local.frontend_alb_security_group_id]
+  target_group_arn            = local.frontend_target_group_arn
+  tags                        = merge(local.common_tags, { Service = "frontend-spa" })
 }

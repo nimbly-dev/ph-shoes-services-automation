@@ -68,6 +68,11 @@ output "ecs_instance_security_group_id" {
   value       = module.ecs_cluster.instance_security_group_id
 }
 
+output "common_tags" {
+  description = "Standard tags applied to resources"
+  value       = local.common_tags
+}
+
 output "frontend_alb_dns_name" {
   description = "DNS name of the frontend ALB (when enabled)"
   value       = try(module.frontend_alb[0].alb_dns_name, null)

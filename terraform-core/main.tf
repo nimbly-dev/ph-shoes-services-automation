@@ -33,6 +33,17 @@ locals {
   frontend_enabled = var.frontend_enable && var.frontend_container_image != ""
 }
 
+module "state_backend" {
+  source = "./modules/state-backend"
+
+  bucket_name            = var.state_bucket_name
+  create_bucket          = var.create_state_bucket
+  dynamodb_table_name    = var.state_lock_table_name
+  dynamodb_read_capacity = var.state_lock_read_capacity
+  dynamodb_write_capacity = var.state_lock_write_capacity
+  tags                   = local.common_tags
+}
+
 module "project_resource_group" {
   source = "./modules/resource-group"
 

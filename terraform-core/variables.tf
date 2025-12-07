@@ -129,6 +129,36 @@ variable "github_oidc_managed_policy_arns" {
   default     = ["arn:aws:iam::aws:policy/AdministratorAccess"]
 }
 
+variable "state_bucket_name" {
+  description = "S3 bucket name used for Terraform remote state"
+  type        = string
+  default     = "ph-shoes-terraform-state"
+}
+
+variable "create_state_bucket" {
+  description = "Create/manage the S3 bucket within this stack"
+  type        = bool
+  default     = false
+}
+
+variable "state_lock_table_name" {
+  description = "DynamoDB table name used for Terraform state locking"
+  type        = string
+  default     = "ph-shoes-terraform-locks"
+}
+
+variable "state_lock_read_capacity" {
+  description = "Provisioned read capacity for the lock table"
+  type        = number
+  default     = 1
+}
+
+variable "state_lock_write_capacity" {
+  description = "Provisioned write capacity for the lock table"
+  type        = number
+  default     = 1
+}
+
 variable "frontend_enable" {
   description = "Whether to provision the frontend ECS service + ALB"
   type        = bool

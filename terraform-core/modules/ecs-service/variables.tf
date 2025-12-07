@@ -56,6 +56,12 @@ variable "assign_public_ip" {
   default     = true
 }
 
+variable "launch_type" {
+  description = "Launch type used by the ECS service (EC2 or FARGATE)"
+  type        = string
+  default     = "EC2"
+}
+
 variable "environment" {
   description = "Plain-text environment variables"
   type        = map(string)

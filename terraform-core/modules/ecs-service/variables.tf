@@ -71,6 +71,24 @@ variable "secrets" {
   default = []
 }
 
+variable "log_group_name" {
+  description = "Existing CloudWatch log group name. Leave empty to create/manage one."
+  type        = string
+  default     = ""
+}
+
+variable "execution_role_arn" {
+  description = "Existing IAM execution role ARN. Leave empty to create/manage one."
+  type        = string
+  default     = ""
+}
+
+variable "task_role_arn" {
+  description = "Existing IAM task role ARN. Leave empty to create/manage one."
+  type        = string
+  default     = ""
+}
+
 variable "ingress_rules" {
   description = "Ingress rules for the service security group"
   type = list(object({

@@ -49,6 +49,12 @@ variable "managed_policy_arns" {
   default     = []
 }
 
+variable "attach_ecs_execute_policy" {
+  description = "Attach inline policy that allows ECS Exec/SSM channels"
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   description = "Tags applied to IAM resources"
   type        = map(string)

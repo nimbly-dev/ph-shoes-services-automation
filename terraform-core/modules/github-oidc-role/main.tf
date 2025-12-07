@@ -78,6 +78,27 @@ resource "aws_iam_role_policy" "additional" {
   policy = var.additional_policy_json
 }
 
+data "aws_iam_policy_document" "ecs_execute" {
+  statement {
+    sid     = "EcsExecuteCommand"
+    effect  = "Allow"
+    actions = [
+      "ecs:ExecuteCommand",
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "ecs_execute" {
+  count  = var.attach_ecs_execute_policy ? 1 : 0
+  role   = aws_iam_role.github.id
+  policy = data.aws_iam_policy_document.ecs_execute.json
+}
+
 resource "aws_iam_role_policy_attachment" "managed" {
   for_each = toset(var.managed_policy_arns)
 

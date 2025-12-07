@@ -140,6 +140,7 @@ locals {
   log_group_name    = var.log_group_name != "" ? var.log_group_name : aws_cloudwatch_log_group.service[0].name
   execution_role_arn = var.execution_role_arn != "" ? var.execution_role_arn : aws_iam_role.execution[0].arn
   task_role_arn      = var.task_role_arn != "" ? var.task_role_arn : aws_iam_role.task[0].arn
+  assign_public_ip   = var.launch_type == "FARGATE" ? var.assign_public_ip : false
 }
 
 resource "aws_ecs_service" "this" {
@@ -159,7 +160,7 @@ resource "aws_ecs_service" "this" {
   }
 
   network_configuration {
-    assign_public_ip = var.assign_public_ip
+    assign_public_ip = local.assign_public_ip
     subnets          = var.subnet_ids
     security_groups  = concat([aws_security_group.service.id], var.additional_security_group_ids)
   }

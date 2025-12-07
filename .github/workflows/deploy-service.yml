@@ -48,6 +48,10 @@ jobs:
         working-directory: terraform-service-deploy
         env:
           TF_VAR_container_image: ${{ env.IMAGE_URI }}
+          TF_VAR_log_group_name: ${{ secrets.FRONTEND_LOG_GROUP_NAME }}
+          TF_VAR_execution_role_arn: ${{ secrets.FRONTEND_EXEC_ROLE_ARN }}
+          TF_VAR_task_role_arn: ${{ secrets.FRONTEND_TASK_ROLE_ARN }}
+          TF_VAR_target_group_arn: ${{ secrets.FRONTEND_TARGET_GROUP_ARN }}
         run: |
           echo "Deploying service '$SERVICE' with image '$IMAGE_URI'"
           case "$SERVICE" in

@@ -42,7 +42,7 @@ jobs:
 
       - name: Terraform init
         working-directory: terraform-core
-        run: terraform init -input=false
+        run: terraform init -input=false -reconfigure
 
       - name: Deploy via Terraform
         working-directory: terraform-core

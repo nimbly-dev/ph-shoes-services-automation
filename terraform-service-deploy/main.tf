@@ -35,9 +35,9 @@ module "frontend_service" {
   assign_public_ip = true
   aws_region      = var.aws_region
 
-  log_group_name     = try(data.terraform_remote_state.core.outputs.frontend_log_group_name, "")
-  execution_role_arn = try(data.terraform_remote_state.core.outputs.frontend_execution_role_arn, "")
-  task_role_arn      = try(data.terraform_remote_state.core.outputs.frontend_task_role_arn, "")
+  log_group_name     = var.log_group_name != "" ? var.log_group_name : try(data.terraform_remote_state.core.outputs.frontend_log_group_name, "")
+  execution_role_arn = var.execution_role_arn != "" ? var.execution_role_arn : try(data.terraform_remote_state.core.outputs.frontend_execution_role_arn, "")
+  task_role_arn      = var.task_role_arn != "" ? var.task_role_arn : try(data.terraform_remote_state.core.outputs.frontend_task_role_arn, "")
 
   target_group_arn = var.target_group_arn
   tags             = merge(data.terraform_remote_state.core.outputs.common_tags, var.extra_tags, {

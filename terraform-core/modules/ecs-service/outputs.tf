@@ -9,11 +9,21 @@ output "security_group_id" {
 }
 
 output "log_group_name" {
-  value       = aws_cloudwatch_log_group.service.name
+  value       = local.log_group_name
   description = "CloudWatch log group name"
 }
 
 output "task_definition_arn" {
   value       = aws_ecs_task_definition.this.arn
   description = "Task definition ARN"
+}
+
+output "execution_role_arn" {
+  value       = local.execution_role_arn
+  description = "IAM execution role ARN used by the service"
+}
+
+output "task_role_arn" {
+  value       = local.task_role_arn
+  description = "IAM task role ARN used by the service"
 }

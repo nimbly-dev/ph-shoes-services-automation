@@ -20,6 +20,7 @@ locals {
 }
 
 resource "aws_cloudwatch_log_group" "service" {
+  count             = var.log_group_name == "" ? 1 : 0
   name              = "/ecs/${var.service_name}"
   retention_in_days = var.log_retention_in_days
   tags              = var.tags
@@ -50,7 +51,8 @@ resource "aws_security_group" "service" {
 }
 
 resource "aws_iam_role" "execution" {
-  name = "${var.service_name}-execution"
+  count = var.execution_role_arn == "" ? 1 : 0
+  name  = "${var.service_name}-execution"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -64,12 +66,14 @@ resource "aws_iam_role" "execution" {
 }
 
 resource "aws_iam_role_policy_attachment" "execution" {
-  role       = aws_iam_role.execution.name
+  count      = var.execution_role_arn == "" ? 1 : 0
+  role       = aws_iam_role.execution[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 resource "aws_iam_role" "task" {
-  name = "${var.service_name}-task"
+  count = var.task_role_arn == "" ? 1 : 0
+  name  = "${var.service_name}-task"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -83,15 +87,15 @@ resource "aws_iam_role" "task" {
 }
 
 resource "aws_iam_role_policy_attachment" "task_managed" {
-  count      = length(var.task_role_managed_policy_arns)
-  role       = aws_iam_role.task.name
+  count      = var.task_role_arn == "" ? length(var.task_role_managed_policy_arns) : 0
+  role       = aws_iam_role.task[0].name
   policy_arn = var.task_role_managed_policy_arns[count.index]
 }
 
 resource "aws_iam_role_policy" "task_inline" {
-  count  = var.task_role_inline_policy_json == null ? 0 : 1
+  count  = var.task_role_arn == "" && var.task_role_inline_policy_json != null ? 1 : 0
   name   = "${var.service_name}-inline"
-  role   = aws_iam_role.task.id
+  role   = aws_iam_role.task[0].id
   policy = var.task_role_inline_policy_json
 }
 
@@ -101,8 +105,8 @@ resource "aws_ecs_task_definition" "this" {
   requires_compatibilities = ["EC2"]
   cpu                      = var.cpu
   memory                   = var.memory
-  execution_role_arn       = aws_iam_role.execution.arn
-  task_role_arn            = aws_iam_role.task.arn
+  execution_role_arn       = local.execution_role_arn
+  task_role_arn            = local.task_role_arn
 
   container_definitions = jsonencode([
     {
@@ -123,13 +127,19 @@ resource "aws_ecs_task_definition" "this" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.service.name
+          awslogs-group         = local.log_group_name
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = var.service_name
         }
       }
     }
   ])
+}
+
+locals {
+  log_group_name    = var.log_group_name != "" ? var.log_group_name : aws_cloudwatch_log_group.service[0].name
+  execution_role_arn = var.execution_role_arn != "" ? var.execution_role_arn : aws_iam_role.execution[0].arn
+  task_role_arn      = var.task_role_arn != "" ? var.task_role_arn : aws_iam_role.task[0].arn
 }
 
 resource "aws_ecs_service" "this" {

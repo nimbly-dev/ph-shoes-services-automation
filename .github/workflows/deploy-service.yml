@@ -41,18 +41,20 @@ jobs:
           terraform_version: 1.7.5
 
       - name: Terraform init
-        working-directory: terraform-core
+        working-directory: terraform-service-deploy
         run: terraform init -input=false -reconfigure
 
       - name: Deploy via Terraform
-        working-directory: terraform-core
+        working-directory: terraform-service-deploy
+        env:
+          TF_VAR_container_image: ${{ env.IMAGE_URI }}
         run: |
           echo "Deploying service '$SERVICE' with image '$IMAGE_URI'"
           case "$SERVICE" in
             frontend)
-              export TF_VAR_frontend_enable=true
-              export TF_VAR_frontend_container_image="$IMAGE_URI"
-              terraform apply -input=false -auto-approve
+              terraform apply -input=false -auto-approve \
+                -var "service_id=frontend" \
+                -var "desired_count=1"
               ;;
             *)
               echo "Unknown service '$SERVICE'" >&2

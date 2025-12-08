@@ -69,19 +69,16 @@ variable "target_group_arn" {
 variable "log_group_name" {
   description = "Existing CloudWatch log group name"
   type        = string
-  default     = ""
 }
 
 variable "execution_role_arn" {
   description = "Existing execution IAM role ARN"
   type        = string
-  default     = ""
 }
 
 variable "task_role_arn" {
   description = "Existing task IAM role ARN"
   type        = string
-  default     = ""
 }
 
 variable "extra_tags" {

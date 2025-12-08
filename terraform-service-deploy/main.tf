@@ -15,6 +15,14 @@ locals {
   service_name = "${var.project_name}-${var.service_id}"
 }
 
+output "debug_cluster_arn" {
+  value = data.terraform_remote_state.core.outputs.ecs_cluster_arn
+}
+
+output "debug_vpc_id" {
+  value = data.terraform_remote_state.core.outputs.vpc_id
+}
+
 module "frontend_service" {
   source = "../terraform-core/modules/ecs-service"
 

@@ -46,7 +46,7 @@ module "frontend_service" {
 }
 
 resource "aws_security_group_rule" "alb_to_service" {
-  count                    = var.target_group_arn != "" ? 1 : 0
+  count                    = var.alb_security_group_id != "" ? 1 : 0
   type                     = "ingress"
   from_port                = var.container_port
   to_port                  = var.container_port

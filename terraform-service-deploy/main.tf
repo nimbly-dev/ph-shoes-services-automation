@@ -2,57 +2,58 @@ provider "aws" {
   region = var.aws_region
 }
 
-data "terraform_remote_state" "core" {
-  backend = "s3"
-  config = {
-    bucket = var.core_state_bucket
-    key    = var.core_state_key
-    region = var.aws_region
+data "aws_ecs_cluster" "this" {
+  cluster_name = var.cluster_name
+}
+
+data "aws_ecs_service" "this" {
+  service_name = var.service_name
+  cluster_arn  = data.aws_ecs_cluster.this.arn
+}
+
+resource "aws_ecs_task_definition" "this" {
+  family                   = var.service_name
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["EC2"]
+  cpu                      = var.cpu
+  memory                   = var.memory
+  execution_role_arn       = var.execution_role_arn
+  task_role_arn            = var.task_role_arn
+
+  container_definitions = jsonencode([{
+    name      = var.service_name
+    image     = var.container_image
+    cpu       = var.cpu
+    memory    = var.memory
+    essential = true
+    portMappings = [{
+      containerPort = var.container_port
+      hostPort      = var.container_port
+      protocol      = "tcp"
+    }]
+    environment = [for k, v in var.environment : { name = k, value = v }]
+    secrets     = var.secrets
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = var.log_group_name
+        awslogs-region        = var.aws_region
+        awslogs-stream-prefix = var.service_name
+      }
+    }
+  }])
+}
+
+resource "null_resource" "force_deployment" {
+  triggers = {
+    task_definition = aws_ecs_task_definition.this.arn
+  }
+
+  provisioner "local-exec" {
+    command = "aws ecs update-service --cluster ${data.aws_ecs_cluster.this.cluster_name} --service ${var.service_name} --task-definition ${aws_ecs_task_definition.this.family}:${aws_ecs_task_definition.this.revision} --force-new-deployment --region ${var.aws_region}"
   }
 }
 
-locals {
-  service_name = "${var.project_name}-${var.service_id}"
-}
-
-output "debug_cluster_arn" {
-  value = data.terraform_remote_state.core.outputs.ecs_cluster_arn
-}
-
-output "debug_vpc_id" {
-  value = data.terraform_remote_state.core.outputs.vpc_id
-}
-
-module "frontend_service" {
-  source = "../terraform-core/modules/ecs-service"
-
-  service_name           = local.service_name
-  cluster_arn            = data.terraform_remote_state.core.outputs.ecs_cluster_arn
-  capacity_provider_name = data.terraform_remote_state.core.outputs.ecs_capacity_provider_name
-  subnet_ids             = data.terraform_remote_state.core.outputs.public_subnet_ids
-  vpc_id                 = data.terraform_remote_state.core.outputs.vpc_id
-
-  container_image = var.container_image
-  container_port  = var.container_port
-  cpu             = var.cpu
-  memory          = var.memory
-  desired_count   = var.desired_count
-
-  environment     = var.environment
-  secrets         = var.secrets
-  assign_public_ip = true
-  aws_region      = var.aws_region
-
-  log_group_name     = var.log_group_name
-  execution_role_arn = var.execution_role_arn
-  task_role_arn      = var.task_role_arn
-
-  target_group_arn = var.target_group_arn
-  tags             = merge(data.terraform_remote_state.core.outputs.common_tags, var.extra_tags, {
-    Service = var.service_id
-  })
-}
-
-output "service_name" {
-  value = module.frontend_service.service_name
+output "task_definition_arn" {
+  value = aws_ecs_task_definition.this.arn
 }

@@ -6,11 +6,19 @@ on:
   workflow_dispatch:
     inputs:
       service:
-        description: "Service name (frontend, user-accounts, etc.)"
+        description: "Service name (frontend, user-accounts, catalog, etc.)"
         required: true
       image_uri:
         description: "Full ECR image URI"
         required: true
+      container_port:
+        description: "Container port (80 for frontend, 8080 for backend)"
+        required: false
+        default: '8080'
+      desired_count:
+        description: "Desired task count"
+        required: false
+        default: '1'
 
 permissions:
   contents: read
@@ -24,6 +32,8 @@ jobs:
       AWS_REGION: ap-southeast-1
       SERVICE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.service || github.event.inputs.service }}
       IMAGE_URI: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.image_uri || github.event.inputs.image_uri }}
+      CONTAINER_PORT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.container_port || github.event.inputs.container_port || '8080' }}
+      DESIRED_COUNT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.desired_count || github.event.inputs.desired_count || '1' }}
 
     steps:
       - name: Checkout
@@ -44,25 +54,34 @@ jobs:
         working-directory: terraform-service-deploy
         run: terraform init -input=false -reconfigure
 
+      - name: Set service-specific secrets
+        id: secrets
+        run: |
+          case "$SERVICE" in
+            frontend)
+              echo "log_group=/ecs/ph-shoes-services-automation-frontend" >> $GITHUB_OUTPUT
+              echo "exec_role=${{ secrets.FRONTEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "task_role=${{ secrets.FRONTEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "port=80" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "log_group=/ecs/ph-shoes-services-automation-$SERVICE" >> $GITHUB_OUTPUT
+              echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "port=${CONTAINER_PORT}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
       - name: Deploy via Terraform
         working-directory: terraform-service-deploy
         env:
+          TF_VAR_service_id: ${{ env.SERVICE }}
           TF_VAR_container_image: ${{ env.IMAGE_URI }}
-          TF_VAR_log_group_name: ${{ secrets.FRONTEND_LOG_GROUP_NAME }}
-          TF_VAR_execution_role_arn: ${{ secrets.FRONTEND_EXEC_ROLE_ARN }}
-          TF_VAR_task_role_arn: ${{ secrets.FRONTEND_TASK_ROLE_ARN }}
-          TF_VAR_target_group_arn: ${{ secrets.FRONTEND_TARGET_GROUP_ARN }}
-          TF_VAR_alb_security_group_id: ${{ secrets.FRONTEND_ALB_SG_ID }}
+          TF_VAR_container_port: ${{ steps.secrets.outputs.port }}
+          TF_VAR_desired_count: ${{ env.DESIRED_COUNT }}
+          TF_VAR_log_group_name: ${{ steps.secrets.outputs.log_group }}
+          TF_VAR_execution_role_arn: ${{ steps.secrets.outputs.exec_role }}
+          TF_VAR_task_role_arn: ${{ steps.secrets.outputs.task_role }}
         run: |
-          echo "Deploying service '$SERVICE' with image '$IMAGE_URI'"
-          case "$SERVICE" in
-            frontend)
-              terraform apply -input=false -auto-approve \
-                -var "service_id=frontend" \
-                -var "desired_count=1"
-              ;;
-            *)
-              echo "Unknown service '$SERVICE'" >&2
-              exit 1
-              ;;
-          esac
+          echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port"
+          terraform apply -input=false -auto-approve

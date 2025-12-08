@@ -97,3 +97,8 @@ output "frontend_task_role_arn" {
   description = "Task role ARN for the frontend service"
   value       = try(module.frontend_service[0].task_role_arn, null)
 }
+
+output "frontend_alb_security_group_id" {
+  description = "Security group ID of the frontend ALB"
+  value       = try(module.frontend_alb[0].alb_security_group_id, null)
+}

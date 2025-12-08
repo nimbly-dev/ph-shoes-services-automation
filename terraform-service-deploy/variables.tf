@@ -101,3 +101,9 @@ variable "core_state_key" {
   type        = string
   default     = "services-tf-state/core/terraform.tfstate"
 }
+
+variable "alb_security_group_id" {
+  description = "ALB security group ID to allow health checks"
+  type        = string
+  default     = ""
+}

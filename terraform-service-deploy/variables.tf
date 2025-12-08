@@ -16,6 +16,18 @@ variable "service_id" {
   default     = "frontend"
 }
 
+variable "service_name" {
+  description = "ECS service name"
+  type        = string
+  default     = "ph-shoes-services-automation-frontend"
+}
+
+variable "cluster_name" {
+  description = "ECS cluster name"
+  type        = string
+  default     = "ph-shoes-services-ecs"
+}
+
 variable "container_image" {
   description = "Container image URI"
   type        = string
@@ -24,7 +36,7 @@ variable "container_image" {
 variable "container_port" {
   description = "Container port"
   type        = number
-  default     = 80
+  default     = 8080
 }
 
 variable "cpu" {
@@ -42,7 +54,7 @@ variable "memory" {
 variable "desired_count" {
   description = "Desired ECS task count"
   type        = number
-  default     = 1
+  default     = 0
 }
 
 variable "environment" {
@@ -61,7 +73,7 @@ variable "secrets" {
 }
 
 variable "target_group_arn" {
-  description = "Target group ARN"
+  description = "Target group ARN (optional for backend services)"
   type        = string
   default     = ""
 }
@@ -87,20 +99,4 @@ variable "extra_tags" {
   default     = {}
 }
 
-variable "core_state_bucket" {
-  description = "S3 bucket holding terraform-core state"
-  type        = string
-  default     = "ph-shoes-terraform-state"
-}
 
-variable "core_state_key" {
-  description = "S3 key for terraform-core state"
-  type        = string
-  default     = "services-tf-state/core/terraform.tfstate"
-}
-
-variable "alb_security_group_id" {
-  description = "ALB security group ID to allow health checks"
-  type        = string
-  default     = ""
-}

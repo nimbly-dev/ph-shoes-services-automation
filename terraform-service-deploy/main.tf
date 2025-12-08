@@ -45,16 +45,6 @@ module "frontend_service" {
   })
 }
 
-resource "aws_security_group_rule" "alb_to_service" {
-  count                    = var.alb_security_group_id != "" ? 1 : 0
-  type                     = "ingress"
-  from_port                = var.container_port
-  to_port                  = var.container_port
-  protocol                 = "tcp"
-  security_group_id        = module.frontend_service.security_group_id
-  source_security_group_id = var.alb_security_group_id
-}
-
 output "service_name" {
   value = module.frontend_service.service_name
 }

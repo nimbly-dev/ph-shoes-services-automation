@@ -91,12 +91,29 @@ jobs:
 
       - name: Verify deployment
         run: |
-          echo "Service updated. Checking deployment status..."
+          echo "Checking deployment status..."
           aws ecs describe-services \
             --cluster ph-shoes-services-ecs \
             --services ph-shoes-services-automation-${{ env.SERVICE }} \
             --region ${{ env.AWS_REGION }} \
-            --query 'services[0].{desired:desiredCount,running:runningCount,taskDef:taskDefinition}'
+            --query 'services[0].{desired:desiredCount,running:runningCount,pending:pendingCount,taskDef:taskDefinition}'
           
-          echo "Deployment triggered. New tasks will start shortly."
-          echo "Check ECS console for live status: https://console.aws.amazon.com/ecs/v2/clusters/ph-shoes-services-ecs/services/ph-shoes-services-automation-${{ env.SERVICE }}"
+          echo ""
+          echo "Checking task status..."
+          TASK_ARN=$(aws ecs list-tasks \
+            --cluster ph-shoes-services-ecs \
+            --service-name ph-shoes-services-automation-${{ env.SERVICE }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'taskArns[0]' --output text)
+          
+          if [ "$TASK_ARN" != "None" ] && [ -n "$TASK_ARN" ]; then
+            aws ecs describe-tasks \
+              --cluster ph-shoes-services-ecs \
+              --tasks $TASK_ARN \
+              --region ${{ env.AWS_REGION }} \
+              --query 'tasks[0].{status:lastStatus,health:healthStatus,image:containers[0].image,reason:stoppedReason}'
+          fi
+          
+          echo ""
+          echo "Check ECS console: https://console.aws.amazon.com/ecs/v2/clusters/ph-shoes-services-ecs/services/ph-shoes-services-automation-${{ env.SERVICE }}"
+          echo "Check ALB health: https://console.aws.amazon.com/ec2/v2/home?region=${{ env.AWS_REGION }}#TargetGroups:"

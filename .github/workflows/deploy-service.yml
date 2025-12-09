@@ -52,7 +52,9 @@ jobs:
 
       - name: Terraform init
         working-directory: terraform-service-deploy
-        run: terraform init -input=false -reconfigure
+        run: |
+          terraform init -input=false -reconfigure \
+            -backend-config="key=services-tf-state/deployments/${SERVICE}.tfstate"
 
       - name: Set service-specific secrets
         id: secrets
@@ -76,6 +78,7 @@ jobs:
         working-directory: terraform-service-deploy
         env:
           TF_VAR_service_id: ${{ env.SERVICE }}
+          TF_VAR_service_name: ph-shoes-services-automation-${{ env.SERVICE }}
           TF_VAR_container_image: ${{ env.IMAGE_URI }}
           TF_VAR_container_port: ${{ steps.secrets.outputs.port }}
           TF_VAR_desired_count: ${{ env.DESIRED_COUNT }}

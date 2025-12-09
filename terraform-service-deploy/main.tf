@@ -47,6 +47,8 @@ resource "aws_ecs_task_definition" "this" {
 resource "null_resource" "force_deployment" {
   triggers = {
     task_definition = aws_ecs_task_definition.this.arn
+    image           = var.container_image
+    timestamp       = timestamp()
   }
 
   provisioner "local-exec" {

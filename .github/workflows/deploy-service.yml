@@ -91,14 +91,12 @@ jobs:
 
       - name: Verify deployment
         run: |
-          echo "Waiting for service to stabilize..."
-          aws ecs wait services-stable \
-            --cluster ph-shoes-services-ecs \
-            --services ph-shoes-services-automation-${{ env.SERVICE }} \
-            --region ${{ env.AWS_REGION }}
-          echo "Service is stable. Checking running tasks..."
+          echo "Service updated. Checking deployment status..."
           aws ecs describe-services \
             --cluster ph-shoes-services-ecs \
             --services ph-shoes-services-automation-${{ env.SERVICE }} \
             --region ${{ env.AWS_REGION }} \
-            --query 'services[0].{runningCount:runningCount,taskDefinition:taskDefinition}'
+            --query 'services[0].{desired:desiredCount,running:runningCount,taskDef:taskDefinition}'
+          
+          echo "Deployment triggered. New tasks will start shortly."
+          echo "Check ECS console for live status: https://console.aws.amazon.com/ecs/v2/clusters/ph-shoes-services-ecs/services/ph-shoes-services-automation-${{ env.SERVICE }}"

@@ -88,3 +88,17 @@ jobs:
         run: |
           echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port"
           terraform apply -input=false -auto-approve
+
+      - name: Verify deployment
+        run: |
+          echo "Waiting for service to stabilize..."
+          aws ecs wait services-stable \
+            --cluster ph-shoes-services-ecs \
+            --services ph-shoes-services-automation-${{ env.SERVICE }} \
+            --region ${{ env.AWS_REGION }}
+          echo "Service is stable. Checking running tasks..."
+          aws ecs describe-services \
+            --cluster ph-shoes-services-ecs \
+            --services ph-shoes-services-automation-${{ env.SERVICE }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'services[0].{runningCount:runningCount,taskDefinition:taskDefinition}'

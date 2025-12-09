@@ -46,14 +46,21 @@ resource "aws_ecs_task_definition" "this" {
 
 resource "null_resource" "force_deployment" {
   triggers = {
-    task_definition = aws_ecs_task_definition.this.arn
-    image           = var.container_image
-    timestamp       = timestamp()
+    image = var.container_image
   }
 
   provisioner "local-exec" {
-    command = "aws ecs update-service --cluster ${data.aws_ecs_cluster.this.cluster_name} --service ${var.service_name} --task-definition ${aws_ecs_task_definition.this.family}:${aws_ecs_task_definition.this.revision} --force-new-deployment --region ${var.aws_region}"
+    command = <<-EOT
+      aws ecs update-service \
+        --cluster ${data.aws_ecs_cluster.this.cluster_name} \
+        --service ${var.service_name} \
+        --task-definition ${aws_ecs_task_definition.this.family}:${aws_ecs_task_definition.this.revision} \
+        --force-new-deployment \
+        --region ${var.aws_region}
+    EOT
   }
+
+  depends_on = [aws_ecs_task_definition.this]
 }
 
 output "task_definition_arn" {

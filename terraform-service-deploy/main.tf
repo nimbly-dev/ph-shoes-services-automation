@@ -46,7 +46,7 @@ resource "aws_ecs_task_definition" "this" {
 
 resource "null_resource" "force_deployment" {
   triggers = {
-    image = var.container_image
+    always_run = timestamp()
   }
 
   provisioner "local-exec" {

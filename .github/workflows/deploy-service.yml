@@ -95,21 +95,19 @@ jobs:
             echo "Checking ECS service status..."
             
             for i in {1..30}; do
-              RUNNING=$(aws ecs describe-services \
+              SERVICE_INFO=$(aws ecs describe-services \
                 --cluster ph-shoes-services-ecs \
                 --services ph-shoes-services-automation-frontend \
                 --region ${{ env.AWS_REGION }} \
-                --query 'services[0].runningCount' --output text)
+                --query 'services[0].{running:runningCount,desired:desiredCount,deployments:deployments[?status==`PRIMARY`].{status:status,rolloutState:rolloutState}}' --output json)
               
-              DESIRED=$(aws ecs describe-services \
-                --cluster ph-shoes-services-ecs \
-                --services ph-shoes-services-automation-frontend \
-                --region ${{ env.AWS_REGION }} \
-                --query 'services[0].desiredCount' --output text)
+              RUNNING=$(echo $SERVICE_INFO | jq -r '.running')
+              DESIRED=$(echo $SERVICE_INFO | jq -r '.desired')
+              ROLLOUT_STATE=$(echo $SERVICE_INFO | jq -r '.deployments[0].rolloutState // "PENDING"')
               
-              echo "ECS Status: $RUNNING/$DESIRED tasks running"
+              echo "ECS Status: $RUNNING/$DESIRED tasks running, Rollout: $ROLLOUT_STATE"
               
-              if [ "$RUNNING" = "$DESIRED" ] && [ "$RUNNING" != "0" ]; then
+              if [ "$RUNNING" = "$DESIRED" ] && [ "$RUNNING" != "0" ] && [ "$ROLLOUT_STATE" = "COMPLETED" ]; then
                 echo "✅ ECS tasks are running, checking URL health..."
                 
                 URL="https://phshoesproject.com"

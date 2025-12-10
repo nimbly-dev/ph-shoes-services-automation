@@ -30,3 +30,18 @@ jobs:
             --region ap-southeast-1
           
           echo "Scaled ASG to ${{ github.event.inputs.desired_capacity }} instances"
+
+      - name: Scale ECS services
+        if: github.event.inputs.desired_capacity != '0'
+        run: |
+          echo "Scaling ECS services to 1..."
+          SERVICES=$(aws ecs list-services --cluster ph-shoes-services-ecs --region ap-southeast-1 --query 'serviceArns[*]' --output text)
+          for service_arn in $SERVICES; do
+            service_name=$(echo $service_arn | awk -F'/' '{print $NF}')
+            echo "Scaling $service_name to 1"
+            aws ecs update-service \
+              --cluster ph-shoes-services-ecs \
+              --service $service_name \
+              --desired-count 1 \
+              --region ap-southeast-1
+          done

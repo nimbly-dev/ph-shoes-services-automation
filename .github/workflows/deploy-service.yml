@@ -89,31 +89,29 @@ jobs:
           echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port"
           terraform apply -input=false -auto-approve
 
-      - name: Verify deployment
+      - name: Wait for deployment health check
         run: |
-          echo "Checking deployment status..."
-          aws ecs describe-services \
-            --cluster ph-shoes-services-ecs \
-            --services ph-shoes-services-automation-${{ env.SERVICE }} \
-            --region ${{ env.AWS_REGION }} \
-            --query 'services[0].{desired:desiredCount,running:runningCount,pending:pendingCount,taskDef:taskDefinition}'
-          
-          echo ""
-          echo "Checking task status..."
-          TASK_ARN=$(aws ecs list-tasks \
-            --cluster ph-shoes-services-ecs \
-            --service-name ph-shoes-services-automation-${{ env.SERVICE }} \
-            --region ${{ env.AWS_REGION }} \
-            --query 'taskArns[0]' --output text)
-          
-          if [ "$TASK_ARN" != "None" ] && [ -n "$TASK_ARN" ]; then
-            aws ecs describe-tasks \
+          if [ "${{ env.SERVICE }}" = "frontend" ]; then
+            URL="https://phshoesproject.com"
+            echo "Waiting up to 15 minutes for $URL to be healthy..."
+            
+            for i in {1..90}; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" $URL || echo "000")
+              if [ "$STATUS" = "200" ]; then
+                echo "✅ Site is healthy (HTTP $STATUS)"
+                exit 0
+              fi
+              echo "Attempt $i/90: HTTP $STATUS - waiting 10s..."
+              sleep 10
+            done
+            
+            echo "❌ Deployment failed - site not healthy after 15 minutes"
+            exit 1
+          else
+            echo "Non-frontend service - showing status:"
+            aws ecs describe-services \
               --cluster ph-shoes-services-ecs \
-              --tasks $TASK_ARN \
+              --services ph-shoes-services-automation-${{ env.SERVICE }} \
               --region ${{ env.AWS_REGION }} \
-              --query 'tasks[0].{status:lastStatus,health:healthStatus,image:containers[0].image,reason:stoppedReason}'
+              --query 'services[0].{desired:desiredCount,running:runningCount,pending:pendingCount}'
           fi
-          
-          echo ""
-          echo "Check ECS console: https://console.aws.amazon.com/ecs/v2/clusters/ph-shoes-services-ecs/services/ph-shoes-services-automation-${{ env.SERVICE }}"
-          echo "Check ALB health: https://console.aws.amazon.com/ec2/v2/home?region=${{ env.AWS_REGION }}#TargetGroups:"

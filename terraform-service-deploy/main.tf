@@ -51,29 +51,12 @@ resource "null_resource" "force_deployment" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      set -e
       aws ecs update-service \
         --cluster ${data.aws_ecs_cluster.this.cluster_name} \
         --service ${var.service_name} \
         --task-definition ${aws_ecs_task_definition.this.family}:${aws_ecs_task_definition.this.revision} \
         --force-new-deployment \
         --region ${var.aws_region}
-      
-      sleep 2
-      
-      TASKS=$(aws ecs list-tasks \
-        --cluster ${data.aws_ecs_cluster.this.cluster_name} \
-        --service-name ${var.service_name} \
-        --region ${var.aws_region} \
-        --query 'taskArns' --output text)
-      
-      for task in $TASKS; do
-        aws ecs stop-task \
-          --cluster ${data.aws_ecs_cluster.this.cluster_name} \
-          --task $task \
-          --region ${var.aws_region} \
-          --reason "Force new image pull" || true
-      done
     EOT
   }
 

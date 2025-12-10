@@ -153,8 +153,10 @@ module "frontend_service" {
   secrets                     = var.frontend_secrets
   assign_public_ip            = true
   aws_region                  = var.aws_region
-  target_group_arn            = local.frontend_target_group_arn
-  tags                        = merge(local.common_tags, { Service = "frontend-spa" })
+  target_group_arn                   = local.frontend_target_group_arn
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
+  tags                               = merge(local.common_tags, { Service = "frontend-spa" })
 }
 
 resource "aws_security_group_rule" "frontend_alb_to_service" {

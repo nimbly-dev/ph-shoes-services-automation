@@ -253,7 +253,7 @@ variable "ecs_cluster_name" {
 variable "ecs_instance_type" {
   description = "EC2 instance type for ECS hosts"
   type        = string
-  default     = "t3.small"
+  default     = "t3.micro"
 }
 
 variable "ecs_min_size" {
@@ -263,12 +263,12 @@ variable "ecs_min_size" {
 
 variable "ecs_max_size" {
   type    = number
-  default = 2
+  default = 3
 }
 
 variable "ecs_desired_capacity" {
   type    = number
-  default = 2
+  default = 3
 }
 
 variable "ecs_instance_key_name" {

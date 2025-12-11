@@ -235,7 +235,7 @@ variable "vpc_cidr" {
 variable "public_subnet_cidrs" {
   description = "CIDR blocks for public subnets (must match AZ count)"
   type        = list(string)
-  default     = ["10.50.1.0/24", "10.50.2.0/24"]
+  default     = ["10.50.1.0/24"]
 }
 
 variable "availability_zones" {
@@ -263,12 +263,12 @@ variable "ecs_min_size" {
 
 variable "ecs_max_size" {
   type    = number
-  default = 3
+  default = 1
 }
 
 variable "ecs_desired_capacity" {
   type    = number
-  default = 3
+  default = 1
 }
 
 variable "ecs_instance_key_name" {

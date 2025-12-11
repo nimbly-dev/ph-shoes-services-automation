@@ -73,11 +73,6 @@ output "common_tags" {
   value       = local.common_tags
 }
 
-output "frontend_alb_dns_name" {
-  description = "DNS name of the frontend ALB (when enabled)"
-  value       = try(module.frontend_alb[0].alb_dns_name, null)
-}
-
 output "frontend_service_name" {
   description = "Name of the frontend ECS service (when enabled)"
   value       = try(module.frontend_service[0].service_name, null)
@@ -98,7 +93,7 @@ output "frontend_task_role_arn" {
   value       = try(module.frontend_service[0].task_role_arn, null)
 }
 
-output "frontend_alb_security_group_id" {
-  description = "Security group ID of the frontend ALB"
-  value       = try(module.frontend_alb[0].alb_security_group_id, null)
+output "frontend_ec2_public_ip" {
+  description = "Public IP of EC2 instance running frontend (for Cloudflare)"
+  value       = try(data.aws_instance.ecs_instance[0].public_ip, null)
 }

@@ -101,7 +101,7 @@ resource "aws_iam_role_policy" "task_inline" {
 
 resource "aws_ecs_task_definition" "this" {
   family                   = var.service_name
-  network_mode             = "awsvpc"
+  network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
   cpu                      = var.cpu
   memory                   = var.memory
@@ -159,11 +159,6 @@ resource "aws_ecs_service" "this" {
     weight            = 1
   }
 
-  network_configuration {
-    assign_public_ip = local.assign_public_ip
-    subnets          = var.subnet_ids
-    security_groups  = concat([aws_security_group.service.id], var.additional_security_group_ids)
-  }
 
   dynamic "load_balancer" {
     for_each = var.target_group_arn == "" ? [] : [var.target_group_arn]

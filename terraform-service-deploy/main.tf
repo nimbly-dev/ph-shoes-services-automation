@@ -13,7 +13,7 @@ data "aws_ecs_service" "this" {
 
 resource "aws_ecs_task_definition" "this" {
   family                   = var.service_name
-  network_mode             = "awsvpc"
+  network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
   cpu                      = var.cpu
   memory                   = var.memory

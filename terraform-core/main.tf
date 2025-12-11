@@ -1,9 +1,3 @@
-data "aws_acm_certificate" "frontend" {
-  domain      = var.frontend_domain_name
-  statuses    = ["ISSUED"]
-  most_recent = true
-}
-
 data "aws_route53_zone" "frontend" {
   name         = "${var.frontend_domain_name}."
   private_zone = false
@@ -114,27 +108,6 @@ module "ecs_cluster" {
   tags                    = local.common_tags
 }
 
-module "frontend_alb" {
-  count = local.frontend_enabled ? 1 : 0
-  source = "./modules/frontend-alb"
-
-  name                = "${var.project_name}-frontend"
-  vpc_id              = module.network.vpc_id
-  public_subnet_ids   = module.network.public_subnet_ids
-  certificate_arn     = data.aws_acm_certificate.frontend.arn
-  domain_name         = var.frontend_domain_name
-  hosted_zone_id      = data.aws_route53_zone.frontend.zone_id
-  record_name         = var.frontend_record_name
-  target_group_port   = var.frontend_container_port
-  health_check_path   = var.frontend_health_check_path
-  tags                = local.common_tags
-}
-
-locals {
-  frontend_alb_security_group_id = try(module.frontend_alb[0].alb_security_group_id, null)
-  frontend_target_group_arn      = try(module.frontend_alb[0].target_group_arn, "")
-}
-
 module "frontend_service" {
   count = local.frontend_enabled ? 1 : 0
   source = "./modules/ecs-service"
@@ -153,19 +126,52 @@ module "frontend_service" {
   secrets                     = var.frontend_secrets
   assign_public_ip            = true
   aws_region                  = var.aws_region
-  target_group_arn                   = local.frontend_target_group_arn
+  target_group_arn                   = ""
   deployment_minimum_healthy_percent = 0
   deployment_maximum_percent         = 100
   tags                               = merge(local.common_tags, { Service = "frontend-spa" })
 }
 
-resource "aws_security_group_rule" "frontend_alb_to_service" {
+# Allow HTTP traffic from anywhere (Cloudflare will proxy HTTPS)
+resource "aws_security_group_rule" "frontend_http_ingress" {
   count = local.frontend_enabled ? 1 : 0
 
-  type                     = "ingress"
-  from_port                = var.frontend_container_port
-  to_port                  = var.frontend_container_port
-  protocol                 = "tcp"
-  security_group_id        = module.frontend_service[count.index].security_group_id
-  source_security_group_id = module.frontend_alb[count.index].alb_security_group_id
+  type              = "ingress"
+  from_port         = var.frontend_container_port
+  to_port           = var.frontend_container_port
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = module.frontend_service[count.index].security_group_id
+}
+
+# Get EC2 instance public IP for Route 53 record
+data "aws_instances" "ecs_instances" {
+  count = local.frontend_enabled ? 1 : 0
+
+  filter {
+    name   = "tag:aws:autoscaling:groupName"
+    values = [module.ecs_cluster.autoscaling_group_name]
+  }
+
+  filter {
+    name   = "instance-state-name"
+    values = ["running"]
+  }
+}
+
+data "aws_instance" "ecs_instance" {
+  count = local.frontend_enabled && length(try(data.aws_instances.ecs_instances[0].ids, [])) > 0 ? 1 : 0
+
+  instance_id = data.aws_instances.ecs_instances[0].ids[0]
+}
+
+# Route 53 A record pointing to EC2 instance (for Cloudflare)
+resource "aws_route53_record" "frontend" {
+  count = local.frontend_enabled && length(try(data.aws_instances.ecs_instances[0].ids, [])) > 0 ? 1 : 0
+
+  zone_id = data.aws_route53_zone.frontend.zone_id
+  name    = var.frontend_record_name == "" ? var.frontend_domain_name : "${var.frontend_record_name}.${var.frontend_domain_name}"
+  type    = "A"
+  ttl     = 300
+  records = [data.aws_instance.ecs_instance[0].public_ip]
 }

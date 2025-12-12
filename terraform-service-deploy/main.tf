@@ -55,10 +55,8 @@ resource "aws_ecs_service" "this" {
     base              = 0
   }
 
-  deployment_configuration {
-    maximum_percent         = 100
-    minimum_healthy_percent = 0
-  }
+  deployment_maximum_percent         = 100
+  deployment_minimum_healthy_percent = 0
 
   enable_execute_command = true
 }

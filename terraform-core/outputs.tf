@@ -95,5 +95,5 @@ output "frontend_task_role_arn" {
 
 output "frontend_ec2_public_ip" {
   description = "Public IP of EC2 instance running frontend (for Cloudflare)"
-  value       = try(data.aws_instance.ecs_instance[0].public_ip, null)
+  value       = try(length(data.aws_instances.ecs_instances[0].public_ips) > 0 ? data.aws_instances.ecs_instances[0].public_ips[0] : null, null)
 }

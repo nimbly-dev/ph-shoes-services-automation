@@ -141,10 +141,10 @@ resource "aws_security_group_rule" "frontend_http_ingress" {
   to_port           = var.frontend_container_port
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = module.frontend_service[count.index].security_group_id
+  security_group_id = module.ecs_cluster.instance_security_group_id
 }
 
-# Get EC2 instance public IP for Route 53 record
+# Get EC2 instance for Route 53 record
 data "aws_instances" "ecs_instances" {
   count = local.frontend_enabled ? 1 : 0
 
@@ -157,21 +157,17 @@ data "aws_instances" "ecs_instances" {
     name   = "instance-state-name"
     values = ["running"]
   }
-}
 
-data "aws_instance" "ecs_instance" {
-  count = local.frontend_enabled && length(try(data.aws_instances.ecs_instances[0].ids, [])) > 0 ? 1 : 0
-
-  instance_id = data.aws_instances.ecs_instances[0].ids[0]
+  depends_on = [module.ecs_cluster, module.frontend_service]
 }
 
 # Route 53 A record pointing to EC2 instance (for Cloudflare)
 resource "aws_route53_record" "frontend" {
-  count = local.frontend_enabled && length(try(data.aws_instances.ecs_instances[0].ids, [])) > 0 ? 1 : 0
+  count = local.frontend_enabled ? 1 : 0
 
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = var.frontend_record_name == "" ? var.frontend_domain_name : "${var.frontend_record_name}.${var.frontend_domain_name}"
   type    = "A"
   ttl     = 300
-  records = [data.aws_instance.ecs_instance[0].public_ip]
+  records = length(data.aws_instances.ecs_instances[0].public_ips) > 0 ? [data.aws_instances.ecs_instances[0].public_ips[0]] : ["127.0.0.1"]
 }

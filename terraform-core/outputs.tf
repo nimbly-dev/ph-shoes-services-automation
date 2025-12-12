@@ -78,4 +78,29 @@ output "route53_zone_id" {
   value       = data.aws_route53_zone.frontend.zone_id
 }
 
+output "frontend_ec2_public_ip" {
+  description = "Public IP of EC2 instance running services"
+  value       = length(data.aws_instances.ecs_instances.public_ips) > 0 ? data.aws_instances.ecs_instances.public_ips[0] : null
+}
+
+output "frontend_service_name" {
+  description = "Name of the frontend ECS service (when enabled)"
+  value       = try(module.frontend_service[0].service_name, null)
+}
+
+output "frontend_log_group_name" {
+  description = "CloudWatch log group name for the frontend service"
+  value       = try(module.frontend_service[0].log_group_name, null)
+}
+
+output "frontend_execution_role_arn" {
+  description = "Execution role ARN for the frontend service"
+  value       = try(module.frontend_service[0].execution_role_arn, null)
+}
+
+output "frontend_task_role_arn" {
+  description = "Task role ARN for the frontend service"
+  value       = try(module.frontend_service[0].task_role_arn, null)
+}
+
 

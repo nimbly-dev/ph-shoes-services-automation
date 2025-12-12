@@ -20,6 +20,8 @@ locals {
     local.backend_repo_objects,
     var.additional_ecr_repositories,
   )
+
+  frontend_enabled = var.frontend_enable && var.frontend_container_image != ""
 }
 
 module "state_backend" {
@@ -108,7 +110,31 @@ module "ecs_cluster" {
   tags                    = local.common_tags
 }
 
-# Allow HTTP traffic for frontend (managed by workflow)
+module "frontend_service" {
+  count  = local.frontend_enabled ? 1 : 0
+  source = "./modules/ecs-service"
+
+  service_name                       = "${var.project_name}-frontend"
+  cluster_arn                        = module.ecs_cluster.cluster_arn
+  capacity_provider_name             = module.ecs_cluster.capacity_provider_name
+  subnet_ids                         = module.network.public_subnet_ids
+  vpc_id                             = module.network.vpc_id
+  container_image                    = var.frontend_container_image
+  container_port                     = var.frontend_container_port
+  cpu                                = var.frontend_cpu
+  memory                             = var.frontend_memory
+  desired_count                      = var.frontend_desired_count
+  environment                        = var.frontend_environment
+  secrets                            = var.frontend_secrets
+  assign_public_ip                   = true
+  aws_region                         = var.aws_region
+  target_group_arn                   = ""
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
+  tags                               = merge(local.common_tags, { Service = "frontend-spa" })
+}
+
+# Allow HTTP traffic for frontend
 resource "aws_security_group_rule" "frontend_http" {
   type              = "ingress"
   from_port         = 80
@@ -116,6 +142,30 @@ resource "aws_security_group_rule" "frontend_http" {
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = module.ecs_cluster.instance_security_group_id
+}
+
+# Get EC2 instance for Route 53 record
+data "aws_instances" "ecs_instances" {
+  filter {
+    name   = "tag:aws:autoscaling:groupName"
+    values = [module.ecs_cluster.autoscaling_group_name]
+  }
+
+  filter {
+    name   = "instance-state-name"
+    values = ["running"]
+  }
+
+  depends_on = [module.ecs_cluster]
+}
+
+# Route 53 A record pointing to EC2 instance
+resource "aws_route53_record" "frontend" {
+  zone_id = data.aws_route53_zone.frontend.zone_id
+  name    = "phshoesproject.com"
+  type    = "A"
+  ttl     = 300
+  records = length(data.aws_instances.ecs_instances.public_ips) > 0 ? [data.aws_instances.ecs_instances.public_ips[0]] : ["127.0.0.1"]
 }
 
 

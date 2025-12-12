@@ -77,12 +77,14 @@ jobs:
       - name: Check if service exists
         id: check_service
         run: |
-          if aws ecs describe-services \
+          STATUS=$(aws ecs describe-services \
             --cluster ph-shoes-services-ecs \
             --services ph-shoes-services-automation-${{ env.SERVICE }} \
             --region ${{ env.AWS_REGION }} \
             --query 'services[0].status' \
-            --output text | grep -q ACTIVE; then
+            --output text 2>/dev/null || echo "MISSING")
+          
+          if [ "$STATUS" = "ACTIVE" ]; then
             echo "create_service=false" >> $GITHUB_OUTPUT
           else
             echo "create_service=true" >> $GITHUB_OUTPUT

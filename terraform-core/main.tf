@@ -78,6 +78,11 @@ module "github_oidc_role" {
   tags                       = local.common_tags
 }
 
+data "aws_route53_zone" "frontend" {
+  name         = "phshoesproject.com"
+  private_zone = false
+}
+
 module "network" {
   source = "./modules/network"
 
@@ -101,6 +106,16 @@ module "ecs_cluster" {
   instance_volume_size    = var.ecs_instance_volume_size
   instance_ingress_rules  = var.ecs_instance_ingress_rules
   tags                    = local.common_tags
+}
+
+# Allow HTTP traffic for frontend (managed by workflow)
+resource "aws_security_group_rule" "frontend_http" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = module.ecs_cluster.instance_security_group_id
 }
 
 

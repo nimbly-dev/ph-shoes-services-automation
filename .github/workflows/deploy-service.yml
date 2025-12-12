@@ -74,6 +74,20 @@ jobs:
               ;;
           esac
 
+      - name: Check if service exists
+        id: check_service
+        run: |
+          if aws ecs describe-services \
+            --cluster ph-shoes-services-ecs \
+            --services ph-shoes-services-automation-${{ env.SERVICE }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'services[0].status' \
+            --output text | grep -q ACTIVE; then
+            echo "create_service=false" >> $GITHUB_OUTPUT
+          else
+            echo "create_service=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy via Terraform
         working-directory: terraform-service-deploy
         env:
@@ -85,8 +99,9 @@ jobs:
           TF_VAR_log_group_name: ${{ steps.secrets.outputs.log_group }}
           TF_VAR_execution_role_arn: ${{ steps.secrets.outputs.exec_role }}
           TF_VAR_task_role_arn: ${{ steps.secrets.outputs.task_role }}
+          TF_VAR_create_service: ${{ steps.check_service.outputs.create_service }}
         run: |
-          echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port"
+          echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port (create=$TF_VAR_create_service)"
           terraform apply -input=false -auto-approve
 
       - name: Wait for deployment health check

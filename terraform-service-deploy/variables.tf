@@ -105,4 +105,10 @@ variable "create_service" {
   default     = false
 }
 
+variable "capacity_provider_name" {
+  description = "ECS capacity provider name"
+  type        = string
+  default     = "ph-shoes-services-ecs-cp"
+}
+
 

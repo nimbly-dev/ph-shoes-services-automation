@@ -12,30 +12,6 @@ data "aws_ecs_service" "this" {
   cluster_arn  = data.aws_ecs_cluster.this.arn
 }
 
-data "aws_vpc" "this" {
-  count = var.create_service ? 1 : 0
-  filter {
-    name   = "tag:Project"
-    values = ["ph-shoes-services-automation"]
-  }
-}
-
-data "aws_subnets" "public" {
-  count = var.create_service ? 1 : 0
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.this[0].id]
-  }
-}
-
-data "aws_security_group" "ecs_instances" {
-  count = var.create_service ? 1 : 0
-  filter {
-    name   = "tag:Name"
-    values = ["ph-shoes-services-ecs-instances"]
-  }
-}
-
 resource "aws_cloudwatch_log_group" "this" {
   count             = var.create_service ? 1 : 0
   name              = var.log_group_name
@@ -50,7 +26,7 @@ resource "aws_ecs_service" "this" {
   desired_count   = var.desired_count
 
   capacity_provider_strategy {
-    capacity_provider = "ph-shoes-services-ecs-cp"
+    capacity_provider = var.capacity_provider_name
     weight            = 1
     base              = 0
   }

@@ -1,4 +1,4 @@
-frontend_enable = false
+
 
 ecs_instance_ingress_rules = [
   {

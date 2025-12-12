@@ -15,11 +15,5 @@ ecs_instance_ingress_rules = [
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-  },
-  {
-    from_port   = 5173
-    to_port     = 5173
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
   }
 ]

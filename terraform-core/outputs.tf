@@ -73,4 +73,9 @@ output "common_tags" {
   value       = local.common_tags
 }
 
+output "route53_zone_id" {
+  description = "Route53 hosted zone ID for phshoesproject.com"
+  value       = data.aws_route53_zone.frontend.zone_id
+}
+
 

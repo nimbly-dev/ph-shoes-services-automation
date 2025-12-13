@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       service:
-        description: "Service name (frontend, user-accounts, catalog, etc.)"
+        description: "Service name (frontend, catalog, user-accounts, text-search, alerts)"
         required: true
       image_uri:
         description: "Full ECR image URI"
@@ -65,53 +65,53 @@ jobs:
       - name: Set service-specific secrets
         id: secrets
         run: |
-          case "$SERVICE" in
+          # Determine service type based on service name
+          if [ "$SERVICE" = "frontend" ]; then
+            SERVICE_TYPE="frontend"
+          else
+            SERVICE_TYPE="backend"
+          fi
+          
+          case "$SERVICE_TYPE" in
             frontend)
-              echo "log_group=/ecs/ph-shoes-services-automation-frontend" >> $GITHUB_OUTPUT
+              echo "log_group=/ecs/ph-shoes-services-automation-$SERVICE" >> $GITHUB_OUTPUT
               echo "exec_role=${{ secrets.FRONTEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "task_role=${{ secrets.FRONTEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "port=80" >> $GITHUB_OUTPUT
               echo "host_port=8080" >> $GITHUB_OUTPUT
               echo "memory=128" >> $GITHUB_OUTPUT
+              echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
               ;;
-            catalog)
-              echo "log_group=/ecs/ph-shoes-services-automation-catalog" >> $GITHUB_OUTPUT
-              echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=8080" >> $GITHUB_OUTPUT
-              echo "host_port=8083" >> $GITHUB_OUTPUT
-              echo "memory=456" >> $GITHUB_OUTPUT
-              ;;
-            user-accounts)
-              echo "log_group=/ecs/ph-shoes-services-automation-user-accounts" >> $GITHUB_OUTPUT
-              echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=8080" >> $GITHUB_OUTPUT
-              echo "host_port=8082" >> $GITHUB_OUTPUT
-              echo "memory=456" >> $GITHUB_OUTPUT
-              ;;
-            text-search)
-              echo "log_group=/ecs/ph-shoes-services-automation-text-search" >> $GITHUB_OUTPUT
-              echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=8080" >> $GITHUB_OUTPUT
-              echo "host_port=8084" >> $GITHUB_OUTPUT
-              echo "memory=456" >> $GITHUB_OUTPUT
-              ;;
-            alerts)
-              echo "log_group=/ecs/ph-shoes-services-automation-alerts" >> $GITHUB_OUTPUT
-              echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=8080" >> $GITHUB_OUTPUT
-              echo "host_port=8085" >> $GITHUB_OUTPUT
-              echo "memory=456" >> $GITHUB_OUTPUT
-              ;;
-            *)
+            backend)
               echo "log_group=/ecs/ph-shoes-services-automation-$SERVICE" >> $GITHUB_OUTPUT
               echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=${CONTAINER_PORT}" >> $GITHUB_OUTPUT
-              echo "memory=512" >> $GITHUB_OUTPUT
+              echo "port=8080" >> $GITHUB_OUTPUT
+              echo "memory=456" >> $GITHUB_OUTPUT
+              
+              # Set host port based on service name
+              case "$SERVICE" in
+                catalog)
+                  echo "host_port=8083" >> $GITHUB_OUTPUT
+                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\",\"SNOWFLAKE_ACCOUNT\":\"${{ secrets.SNOWFLAKE_ACCOUNT }}\",\"SNOWFLAKE_WAREHOUSE\":\"${{ secrets.SNOWFLAKE_WAREHOUSE }}\",\"SNOWFLAKE_DATABASE\":\"${{ secrets.SNOWFLAKE_DATABASE }}\",\"SNOWFLAKE_SCHEMA\":\"${{ secrets.SNOWFLAKE_SCHEMA }}\",\"SNOWFLAKE_USER\":\"${{ secrets.SNOWFLAKE_USER }}\",\"SNOWFLAKE_PWD\":\"${{ secrets.SNOWFLAKE_PWD }}\"}" >> $GITHUB_OUTPUT
+                  ;;
+                user-accounts)
+                  echo "host_port=8082" >> $GITHUB_OUTPUT
+                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
+                  ;;
+                text-search)
+                  echo "host_port=8084" >> $GITHUB_OUTPUT
+                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
+                  ;;
+                alerts)
+                  echo "host_port=8085" >> $GITHUB_OUTPUT
+                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
+                  ;;
+                *)
+                  echo "host_port=${CONTAINER_PORT}" >> $GITHUB_OUTPUT
+                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
+                  ;;
+              esac
               ;;
           esac
 
@@ -128,7 +128,7 @@ jobs:
           TF_VAR_log_group_name: ${{ steps.secrets.outputs.log_group }}
           TF_VAR_execution_role_arn: ${{ steps.secrets.outputs.exec_role }}
           TF_VAR_task_role_arn: ${{ steps.secrets.outputs.task_role }}
-          TF_VAR_environment: '{"APP_ENV":"${{ env.APP_ENV }}","APP_VERSION":"${{ env.APP_VERSION }}"}'
+          TF_VAR_environment: ${{ steps.secrets.outputs.environment || '{"APP_ENV":"${{ env.APP_ENV }}","APP_VERSION":"${{ env.APP_VERSION }}"}' }}
         run: |
           echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port (memory: $TF_VAR_memory MB)"
           terraform apply -input=false -auto-approve

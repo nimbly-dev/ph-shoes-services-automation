@@ -78,11 +78,6 @@ variable "secrets" {
   default = []
 }
 
-variable "target_group_arn" {
-  description = "Target group ARN (optional for backend services)"
-  type        = string
-  default     = ""
-}
 
 variable "log_group_name" {
   description = "Existing CloudWatch log group name"
@@ -109,6 +104,24 @@ variable "capacity_provider_name" {
   description = "ECS capacity provider name"
   type        = string
   default     = "ph-shoes-services-ecs-cp"
+}
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention period in days"
+  type        = number
+  default     = 7
+}
+
+variable "system_buffer_mb" {
+  description = "System buffer reservation in MB"
+  type        = number
+  default     = 100
+}
+
+variable "max_total_memory_mb" {
+  description = "Maximum total memory available on t3.micro instance in MB"
+  type        = number
+  default     = 940
 }
 
 

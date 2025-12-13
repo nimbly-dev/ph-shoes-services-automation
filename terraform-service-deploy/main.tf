@@ -2,13 +2,30 @@ provider "aws" {
   region = var.aws_region
 }
 
+locals {
+  # Calculate available memory after system buffer
+  available_memory_mb = var.max_total_memory_mb - var.system_buffer_mb
+  
+  # Memory validation
+  memory_exceeds_limit = var.memory > local.available_memory_mb
+}
+
+# Memory validation check
+resource "null_resource" "memory_validation" {
+  count = local.memory_exceeds_limit ? 1 : 0
+  
+  provisioner "local-exec" {
+    command = "echo 'ERROR: Memory allocation ${var.memory}MB exceeds available capacity ${local.available_memory_mb}MB (${var.max_total_memory_mb}MB total - ${var.system_buffer_mb}MB system buffer)' && exit 1"
+  }
+}
+
 data "aws_ecs_cluster" "this" {
   cluster_name = var.cluster_name
 }
 
 resource "aws_cloudwatch_log_group" "this" {
   name              = var.log_group_name
-  retention_in_days = 14
+  retention_in_days = var.log_retention_days
 }
 
 resource "aws_ecs_service" "this" {
@@ -31,6 +48,8 @@ resource "aws_ecs_service" "this" {
   lifecycle {
     ignore_changes = [task_definition]
   }
+
+  depends_on = [null_resource.memory_validation]
 }
 
 resource "aws_ecs_task_definition" "this" {
@@ -91,4 +110,15 @@ output "task_definition_arn" {
 
 output "task_definition_revision" {
   value = aws_ecs_task_definition.this.revision
+}
+
+output "memory_allocation_status" {
+  value = {
+    allocated_memory_mb = var.memory
+    available_memory_mb = local.available_memory_mb
+    system_buffer_mb    = var.system_buffer_mb
+    total_memory_mb     = var.max_total_memory_mb
+    within_limits       = !local.memory_exceeds_limit
+  }
+  description = "Memory allocation status and limits"
 }

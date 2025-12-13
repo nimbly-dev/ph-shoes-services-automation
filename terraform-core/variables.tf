@@ -235,4 +235,22 @@ variable "ecs_instance_ingress_rules" {
   ]
 }
 
+variable "frontend_memory_mb" {
+  description = "Memory allocation for frontend services in MB"
+  type        = number
+  default     = 128
+}
+
+variable "backend_memory_mb" {
+  description = "Memory allocation for backend services in MB"
+  type        = number
+  default     = 456
+}
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention period in days"
+  type        = number
+  default     = 7
+}
+
 

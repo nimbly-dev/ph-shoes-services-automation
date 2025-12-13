@@ -197,7 +197,7 @@ variable "ecs_min_size" {
 
 variable "ecs_max_size" {
   type    = number
-  default = 1
+  default = 3
 }
 
 variable "ecs_desired_capacity" {

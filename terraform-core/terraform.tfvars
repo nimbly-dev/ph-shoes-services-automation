@@ -1,5 +1,3 @@
-
-
 ecs_instance_ingress_rules = [
   {
     from_port   = 22

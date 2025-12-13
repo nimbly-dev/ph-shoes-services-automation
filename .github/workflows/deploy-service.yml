@@ -101,6 +101,7 @@ jobs:
                     --arg datasource_url "${{ secrets.SPRING_DATASOURCE_URL }}" \
                     --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
                     --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
+                    --arg datasource_driver "${{ secrets.SPRING_DATASOURCE_DRIVER_CLASS_NAME }}" \
                     --arg snowflake_account "${{ secrets.SNOWFLAKE_ACCOUNT }}" \
                     --arg snowflake_warehouse "${{ secrets.SNOWFLAKE_WAREHOUSE }}" \
                     --arg snowflake_database "${{ secrets.SNOWFLAKE_DATABASE }}" \
@@ -114,6 +115,7 @@ jobs:
                       "SPRING_DATASOURCE_URL": $datasource_url,
                       "SPRING_DATASOURCE_USERNAME": $datasource_username,
                       "SPRING_DATASOURCE_PASSWORD": $datasource_password,
+                      "SPRING_DATASOURCE_DRIVER_CLASS_NAME": $datasource_driver,
                       "SNOWFLAKE_ACCOUNT": $snowflake_account,
                       "SNOWFLAKE_WAREHOUSE": $snowflake_warehouse,
                       "SNOWFLAKE_DATABASE": $snowflake_database,

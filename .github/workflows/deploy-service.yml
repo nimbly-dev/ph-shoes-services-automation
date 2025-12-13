@@ -93,7 +93,7 @@ jobs:
               case "$SERVICE" in
                 catalog)
                   echo "host_port=8083" >> $GITHUB_OUTPUT
-                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\",\"SNOWFLAKE_ACCOUNT\":\"${{ secrets.SNOWFLAKE_ACCOUNT }}\",\"SNOWFLAKE_WAREHOUSE\":\"${{ secrets.SNOWFLAKE_WAREHOUSE }}\",\"SNOWFLAKE_DATABASE\":\"${{ secrets.SNOWFLAKE_DATABASE }}\",\"SNOWFLAKE_SCHEMA\":\"${{ secrets.SNOWFLAKE_SCHEMA }}\",\"SNOWFLAKE_USER\":\"${{ secrets.SNOWFLAKE_USER }}\",\"SNOWFLAKE_PWD\":\"${{ secrets.SNOWFLAKE_PWD }}\"}" >> $GITHUB_OUTPUT
+                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\",\"SPRING_PROFILES_ACTIVE\":\"${{ secrets.SPRING_PROFILES_ACTIVE }}\",\"SPRING_DATASOURCE_URL\":\"${{ secrets.SPRING_DATASOURCE_URL }}\",\"SPRING_DATASOURCE_USERNAME\":\"${{ secrets.SPRING_DATASOURCE_USERNAME }}\",\"SPRING_DATASOURCE_PASSWORD\":\"${{ secrets.SPRING_DATASOURCE_PASSWORD }}\",\"SNOWFLAKE_ACCOUNT\":\"${{ secrets.SNOWFLAKE_ACCOUNT }}\",\"SNOWFLAKE_WAREHOUSE\":\"${{ secrets.SNOWFLAKE_WAREHOUSE }}\",\"SNOWFLAKE_DATABASE\":\"${{ secrets.SNOWFLAKE_DATABASE }}\",\"SNOWFLAKE_SCHEMA\":\"${{ secrets.SNOWFLAKE_SCHEMA }}\",\"SNOWFLAKE_ROLE\":\"${{ secrets.SNOWFLAKE_ROLE }}\",\"SNOWFLAKE_TOKEN\":\"${{ secrets.SNOWFLAKE_TOKEN }}\"}" >> $GITHUB_OUTPUT
                   ;;
                 user-accounts)
                   echo "host_port=8082" >> $GITHUB_OUTPUT

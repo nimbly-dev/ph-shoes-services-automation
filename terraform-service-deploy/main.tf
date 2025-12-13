@@ -6,20 +6,12 @@ data "aws_ecs_cluster" "this" {
   cluster_name = var.cluster_name
 }
 
-data "aws_ecs_service" "this" {
-  count        = var.create_service ? 0 : 1
-  service_name = var.service_name
-  cluster_arn  = data.aws_ecs_cluster.this.arn
-}
-
 resource "aws_cloudwatch_log_group" "this" {
-  count             = var.create_service ? 1 : 0
   name              = var.log_group_name
   retention_in_days = 14
 }
 
 resource "aws_ecs_service" "this" {
-  count           = var.create_service ? 1 : 0
   name            = var.service_name
   cluster         = data.aws_ecs_cluster.this.arn
   task_definition = aws_ecs_task_definition.this.arn
@@ -35,6 +27,10 @@ resource "aws_ecs_service" "this" {
   deployment_minimum_healthy_percent = 0
 
   enable_execute_command = true
+
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
 }
 
 resource "aws_ecs_task_definition" "this" {
@@ -71,9 +67,8 @@ resource "aws_ecs_task_definition" "this" {
 }
 
 resource "null_resource" "force_deployment" {
-  count = var.create_service ? 0 : 1
   triggers = {
-    always_run = timestamp()
+    task_definition_arn = aws_ecs_task_definition.this.arn
   }
 
   provisioner "local-exec" {
@@ -87,7 +82,7 @@ resource "null_resource" "force_deployment" {
     EOT
   }
 
-  depends_on = [aws_ecs_task_definition.this]
+  depends_on = [aws_ecs_service.this, aws_ecs_task_definition.this]
 }
 
 output "task_definition_arn" {

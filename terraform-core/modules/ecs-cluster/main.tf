@@ -93,11 +93,10 @@ resource "aws_launch_template" "ecs" {
     security_groups             = [aws_security_group.ecs_instances.id]
   }
 
-  user_data = base64encode(<<-EOT
-              #!/bin/bash
-              echo ECS_CLUSTER=${var.cluster_name} >> /etc/ecs/ecs.config
-              EOT
-  )
+  user_data = base64encode(templatefile("${path.root}/user-data/ecs-instance-init.sh", {
+    cluster_name = var.cluster_name
+    nginx_config = file("${path.root}/../nginx-services.conf")
+  }))
 
   tag_specifications {
     resource_type = "instance"

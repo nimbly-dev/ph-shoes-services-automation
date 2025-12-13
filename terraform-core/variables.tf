@@ -84,6 +84,7 @@ variable "github_repositories" {
   default     = [
     "ph-shoes-services-automation",
     "ph-shoes-data-spa",
+  "ph-shoes-catalog-service",
   ]
 }
 
@@ -157,73 +158,6 @@ variable "state_lock_write_capacity" {
   description = "Provisioned write capacity for the lock table"
   type        = number
   default     = 1
-}
-
-variable "frontend_enable" {
-  description = "Whether to provision the frontend ECS service + ALB"
-  type        = bool
-  default     = false
-}
-
-variable "frontend_container_image" {
-  description = "Container image for the frontend SPA service"
-  type        = string
-  default     = ""
-}
-
-variable "frontend_container_port" {
-  description = "Frontend container port exposed to the ALB"
-  type        = number
-  default     = 80
-}
-
-variable "frontend_desired_count" {
-  description = "Desired task count for the frontend service"
-  type        = number
-  default     = 0
-}
-
-variable "frontend_cpu" {
-  type    = number
-  default = 256
-}
-
-variable "frontend_memory" {
-  type    = number
-  default = 512
-}
-
-variable "frontend_environment" {
-  description = "Map of environment variables injected into the frontend"
-  type        = map(string)
-  default     = {}
-}
-
-variable "frontend_secrets" {
-  description = "List of secrets for the frontend container"
-  type = list(object({
-    name      = string
-    valueFrom = string
-  }))
-  default = []
-}
-
-variable "frontend_domain_name" {
-  description = "Root domain (e.g., phshoesproject.com)"
-  type        = string
-  default     = "phshoesproject.com"
-}
-
-variable "frontend_record_name" {
-  description = "Record name ('' for apex, e.g., 'www')"
-  type        = string
-  default     = ""
-}
-
-variable "frontend_health_check_path" {
-  description = "ALB health check path"
-  type        = string
-  default     = "/"
 }
 
 variable "vpc_cidr" {
@@ -300,3 +234,5 @@ variable "ecs_instance_ingress_rules" {
     }
   ]
 }
+
+

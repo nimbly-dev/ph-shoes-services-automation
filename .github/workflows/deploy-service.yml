@@ -34,6 +34,8 @@ jobs:
       IMAGE_URI: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.image_uri || github.event.inputs.image_uri }}
       CONTAINER_PORT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.container_port || github.event.inputs.container_port || '8080' }}
       DESIRED_COUNT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.desired_count || github.event.inputs.desired_count || '1' }}
+      APP_ENV: beta
+      APP_VERSION: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.app_version || 'local' }}
 
     steps:
       - name: Checkout
@@ -102,6 +104,7 @@ jobs:
           TF_VAR_execution_role_arn: ${{ steps.secrets.outputs.exec_role }}
           TF_VAR_task_role_arn: ${{ steps.secrets.outputs.task_role }}
           TF_VAR_create_service: ${{ steps.check_service.outputs.create_service }}
+          TF_VAR_environment: '{"APP_ENV":"${{ env.APP_ENV }}","APP_VERSION":"${{ env.APP_VERSION }}"}}'
         run: |
           echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port (create=$TF_VAR_create_service)"
           terraform apply -input=false -auto-approve

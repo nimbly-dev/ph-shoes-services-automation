@@ -99,12 +99,6 @@ variable "extra_tags" {
   default     = {}
 }
 
-variable "create_service" {
-  description = "Whether to create the ECS service (true) or just update existing (false)"
-  type        = bool
-  default     = false
-}
-
 variable "capacity_provider_name" {
   description = "ECS capacity provider name"
   type        = string

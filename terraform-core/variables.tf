@@ -84,7 +84,11 @@ variable "github_repositories" {
   default     = [
     "ph-shoes-services-automation",
     "ph-shoes-data-spa",
-  "ph-shoes-catalog-service",
+    "ph-shoes-catalog-service",
+    "ph-shoes-alerts-service",
+    "ph-shoes-user-accounts-service",
+    "ph-shoes-search-services",
+    "ph-shoes-notification-service",
   ]
 }
 

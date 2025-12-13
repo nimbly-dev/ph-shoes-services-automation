@@ -66,13 +66,43 @@ jobs:
               echo "log_group=/ecs/ph-shoes-services-automation-frontend" >> $GITHUB_OUTPUT
               echo "exec_role=${{ secrets.FRONTEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "task_role=${{ secrets.FRONTEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=80" >> $GITHUB_OUTPUT
+              echo "port=8080" >> $GITHUB_OUTPUT
+              echo "memory=128" >> $GITHUB_OUTPUT
+              ;;
+            catalog)
+              echo "log_group=/ecs/ph-shoes-services-automation-catalog" >> $GITHUB_OUTPUT
+              echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "port=8083" >> $GITHUB_OUTPUT
+              echo "memory=512" >> $GITHUB_OUTPUT
+              ;;
+            user-accounts)
+              echo "log_group=/ecs/ph-shoes-services-automation-user-accounts" >> $GITHUB_OUTPUT
+              echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "port=8082" >> $GITHUB_OUTPUT
+              echo "memory=512" >> $GITHUB_OUTPUT
+              ;;
+            text-search)
+              echo "log_group=/ecs/ph-shoes-services-automation-text-search" >> $GITHUB_OUTPUT
+              echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "port=8084" >> $GITHUB_OUTPUT
+              echo "memory=512" >> $GITHUB_OUTPUT
+              ;;
+            alerts)
+              echo "log_group=/ecs/ph-shoes-services-automation-alerts" >> $GITHUB_OUTPUT
+              echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
+              echo "port=8085" >> $GITHUB_OUTPUT
+              echo "memory=512" >> $GITHUB_OUTPUT
               ;;
             *)
               echo "log_group=/ecs/ph-shoes-services-automation-$SERVICE" >> $GITHUB_OUTPUT
               echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "port=${CONTAINER_PORT}" >> $GITHUB_OUTPUT
+              echo "memory=512" >> $GITHUB_OUTPUT
               ;;
           esac
 
@@ -83,13 +113,14 @@ jobs:
           TF_VAR_service_name: ph-shoes-services-automation-${{ env.SERVICE }}
           TF_VAR_container_image: ${{ env.IMAGE_URI }}
           TF_VAR_container_port: ${{ steps.secrets.outputs.port }}
+          TF_VAR_memory: ${{ steps.secrets.outputs.memory }}
           TF_VAR_desired_count: ${{ env.DESIRED_COUNT }}
           TF_VAR_log_group_name: ${{ steps.secrets.outputs.log_group }}
           TF_VAR_execution_role_arn: ${{ steps.secrets.outputs.exec_role }}
           TF_VAR_task_role_arn: ${{ steps.secrets.outputs.task_role }}
           TF_VAR_environment: '{"APP_ENV":"${{ env.APP_ENV }}","APP_VERSION":"${{ env.APP_VERSION }}"}'
         run: |
-          echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port"
+          echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port (memory: $TF_VAR_memory MB)"
           terraform apply -input=false -auto-approve
 
       - name: Wait for deployment health check

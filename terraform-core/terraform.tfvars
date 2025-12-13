@@ -1,3 +1,5 @@
+ecs_instance_type = "t3.small"
+
 ecs_instance_ingress_rules = [
   {
     from_port   = 22

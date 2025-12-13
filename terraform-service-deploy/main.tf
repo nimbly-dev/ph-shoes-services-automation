@@ -50,7 +50,7 @@ resource "aws_ecs_task_definition" "this" {
     essential = true
     portMappings = [{
       containerPort = var.container_port
-      hostPort      = var.container_port
+      hostPort      = var.host_port != null ? var.host_port : var.container_port
       protocol      = "tcp"
     }]
     environment = [for k, v in var.environment : { name = k, value = v }]

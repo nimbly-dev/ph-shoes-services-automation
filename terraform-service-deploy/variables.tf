@@ -39,6 +39,12 @@ variable "container_port" {
   default     = 8080
 }
 
+variable "host_port" {
+  description = "Host port (defaults to container_port if not specified)"
+  type        = number
+  default     = null
+}
+
 variable "cpu" {
   description = "Task CPU"
   type        = number

@@ -1,4 +1,4 @@
-ecs_instance_type = "t3.small"
+ecs_instance_type = "t3.micro"
 
 ecs_instance_ingress_rules = [
   {

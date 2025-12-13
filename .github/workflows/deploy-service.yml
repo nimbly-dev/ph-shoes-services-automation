@@ -78,29 +78,33 @@ jobs:
               echo "log_group=/ecs/ph-shoes-services-automation-catalog" >> $GITHUB_OUTPUT
               echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=8083" >> $GITHUB_OUTPUT
-              echo "memory=512" >> $GITHUB_OUTPUT
+              echo "port=8080" >> $GITHUB_OUTPUT
+              echo "host_port=8083" >> $GITHUB_OUTPUT
+              echo "memory=456" >> $GITHUB_OUTPUT
               ;;
             user-accounts)
               echo "log_group=/ecs/ph-shoes-services-automation-user-accounts" >> $GITHUB_OUTPUT
               echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=8082" >> $GITHUB_OUTPUT
-              echo "memory=512" >> $GITHUB_OUTPUT
+              echo "port=8080" >> $GITHUB_OUTPUT
+              echo "host_port=8082" >> $GITHUB_OUTPUT
+              echo "memory=456" >> $GITHUB_OUTPUT
               ;;
             text-search)
               echo "log_group=/ecs/ph-shoes-services-automation-text-search" >> $GITHUB_OUTPUT
               echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=8084" >> $GITHUB_OUTPUT
-              echo "memory=512" >> $GITHUB_OUTPUT
+              echo "port=8080" >> $GITHUB_OUTPUT
+              echo "host_port=8084" >> $GITHUB_OUTPUT
+              echo "memory=456" >> $GITHUB_OUTPUT
               ;;
             alerts)
               echo "log_group=/ecs/ph-shoes-services-automation-alerts" >> $GITHUB_OUTPUT
               echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=8085" >> $GITHUB_OUTPUT
-              echo "memory=512" >> $GITHUB_OUTPUT
+              echo "port=8080" >> $GITHUB_OUTPUT
+              echo "host_port=8085" >> $GITHUB_OUTPUT
+              echo "memory=456" >> $GITHUB_OUTPUT
               ;;
             *)
               echo "log_group=/ecs/ph-shoes-services-automation-$SERVICE" >> $GITHUB_OUTPUT

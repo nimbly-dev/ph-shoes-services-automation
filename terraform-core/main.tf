@@ -99,6 +99,13 @@ module "backend_iam_roles" {
   tags        = local.common_tags
 }
 
+module "frontend_iam_roles" {
+  source = "./modules/frontend-iam-roles"
+
+  name_prefix = var.project_name
+  tags        = local.common_tags
+}
+
 module "ecs_cluster" {
   source = "./modules/ecs-cluster"
 

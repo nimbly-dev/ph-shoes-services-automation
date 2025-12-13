@@ -93,4 +93,14 @@ output "backend_task_role_arn" {
   value       = module.backend_iam_roles.task_role_arn
 }
 
+output "frontend_execution_role_arn" {
+  description = "Execution role ARN for frontend service"
+  value       = module.frontend_iam_roles.execution_role_arn
+}
+
+output "frontend_task_role_arn" {
+  description = "Task role ARN for frontend service"
+  value       = module.frontend_iam_roles.task_role_arn
+}
+
 

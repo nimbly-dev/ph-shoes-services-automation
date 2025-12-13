@@ -19,6 +19,10 @@ on:
         description: "Desired task count"
         required: false
         default: '1'
+      app_version:
+        description: "Application version (defaults to 'manual' for manual deployments)"
+        required: false
+        default: 'manual'
 
 permissions:
   contents: read
@@ -35,7 +39,7 @@ jobs:
       CONTAINER_PORT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.container_port || github.event.inputs.container_port || '8080' }}
       DESIRED_COUNT: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.desired_count || github.event.inputs.desired_count || '1' }}
       APP_ENV: beta
-      APP_VERSION: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.app_version || 'local' }}
+      APP_VERSION: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.app_version || github.event.inputs.app_version || 'manual' }}
 
     steps:
       - name: Checkout

@@ -122,15 +122,23 @@ jobs:
                   ;;
                 user-accounts)
                   echo "host_port=8082" >> $GITHUB_OUTPUT
-                  # Create environment JSON with HTTPS URLs for user-accounts service
+                  # Create environment JSON with HTTPS URLs and crypto secrets for user-accounts service
                   jq -n \
                     --arg app_env "${{ env.APP_ENV }}" \
                     --arg app_version "${{ env.APP_VERSION }}" \
                     --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
+                    --arg hmac_pepper_b64 "${{ secrets.HMAC_PEPPER_B64 }}" \
+                    --arg aes_key_b64 "${{ secrets.AES_KEY_B64 }}" \
+                    --arg hmac_legacy_peppers_b64 "${{ secrets.HMAC_LEGACY_PEPPERS_B64 }}" \
+                    --arg jwt_secret "${{ secrets.JWT_SECRET }}" \
                     '{
                       "APP_ENV": $app_env,
                       "APP_VERSION": $app_version,
                       "SPRING_PROFILES_ACTIVE": $spring_profiles,
+                      "HMAC_PEPPER_B64": $hmac_pepper_b64,
+                      "AES_KEY_B64": $aes_key_b64,
+                      "HMAC_LEGACY_PEPPERS_B64": $hmac_legacy_peppers_b64,
+                      "JWT_SECRET": $jwt_secret,
                       "NOTIFICATION_UNSUBSCRIBE_LINK": "https://accounts.phshoesproject.com/api/v1/user-accounts/unsubscribe",
                       "VERIFICATION_LINK_BASE_URL": "https://accounts.phshoesproject.com/api/v1/verify/email",
                       "VERIFICATION_NOT_ME_URL": "https://accounts.phshoesproject.com/api/v1/verify/email/not-me"

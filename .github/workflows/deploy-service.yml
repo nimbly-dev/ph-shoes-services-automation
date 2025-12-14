@@ -171,6 +171,7 @@ jobs:
                   jq -n \
                     --arg app_env "${{ env.APP_ENV }}" \
                     --arg app_version "${{ env.APP_VERSION }}" \
+                    --arg aws_region "${{ env.AWS_REGION }}" \
                     --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
                     --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
                     --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
@@ -183,6 +184,7 @@ jobs:
                     '{
                       "APP_ENV": $app_env,
                       "APP_VERSION": $app_version,
+                      "AWS_REGION": $aws_region,
                       "SPRING_PROFILES_ACTIVE": $spring_profiles,
                       "SPRING_DATASOURCE_USERNAME": $datasource_username,
                       "SPRING_DATASOURCE_PASSWORD": $datasource_password,

@@ -38,8 +38,9 @@ jobs:
         working-directory: terraform-core
         run: |
           terraform init
-          terraform plan -detailed-exitcode -out=tfplan
-          echo "changes=$?" >> $GITHUB_OUTPUT
+          terraform plan -detailed-exitcode -out=tfplan || EXIT_CODE=$?
+          echo "changes=${EXIT_CODE:-0}" >> $GITHUB_OUTPUT
+          exit 0
 
       - name: Apply DNS updates if needed
         if: steps.plan.outputs.changes == '2'

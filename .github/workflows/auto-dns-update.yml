@@ -53,7 +53,7 @@ jobs:
           case $EXIT_CODE in
             0) 
               # Check if plan shows resources to add (means records don't exist in state)
-              if terraform show tfplan | grep -q "Plan: [1-9]"; then
+              if terraform show tfplan | grep -q "Plan: [1-9].* to add"; then
                 echo "📝 New DNS records to create - will apply"
                 echo "changes=2" >> $GITHUB_OUTPUT
               else

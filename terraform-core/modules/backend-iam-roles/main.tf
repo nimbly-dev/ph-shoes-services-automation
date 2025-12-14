@@ -72,7 +72,9 @@ resource "aws_iam_role_policy" "task_dynamodb" {
         "dynamodb:Query",
         "dynamodb:Scan",
         "dynamodb:BatchGetItem",
-        "dynamodb:BatchWriteItem"
+        "dynamodb:BatchWriteItem",
+        "dynamodb:DescribeTimeToLive",
+        "dynamodb:UpdateTimeToLive"
       ]
       Resource = [
         "arn:aws:dynamodb:*:*:table/accounts",

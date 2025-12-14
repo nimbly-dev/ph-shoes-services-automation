@@ -122,15 +122,79 @@ jobs:
                   ;;
                 user-accounts)
                   echo "host_port=8082" >> $GITHUB_OUTPUT
-                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
+                  # Create environment JSON with HTTPS URLs for user-accounts service
+                  jq -n \
+                    --arg app_env "${{ env.APP_ENV }}" \
+                    --arg app_version "${{ env.APP_VERSION }}" \
+                    --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
+                    '{
+                      "APP_ENV": $app_env,
+                      "APP_VERSION": $app_version,
+                      "SPRING_PROFILES_ACTIVE": $spring_profiles,
+                      "NOTIFICATION_UNSUBSCRIBE_LINK": "https://accounts.phshoesproject.com/api/v1/user-accounts/unsubscribe",
+                      "VERIFICATION_LINK_BASE_URL": "https://accounts.phshoesproject.com/api/v1/verify/email",
+                      "VERIFICATION_NOT_ME_URL": "https://accounts.phshoesproject.com/api/v1/verify/email/not-me"
+                    }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
                   ;;
                 text-search)
                   echo "host_port=8084" >> $GITHUB_OUTPUT
-                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
+                  # Create environment JSON for text-search service
+                  jq -n \
+                    --arg app_env "${{ env.APP_ENV }}" \
+                    --arg app_version "${{ env.APP_VERSION }}" \
+                    --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
+                    --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
+                    --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
+                    --arg snowflake_account "${{ secrets.SNOWFLAKE_ACCOUNT }}" \
+                    --arg snowflake_warehouse "${{ secrets.SNOWFLAKE_WAREHOUSE }}" \
+                    --arg snowflake_database "${{ secrets.SNOWFLAKE_DATABASE }}" \
+                    --arg snowflake_schema "${{ secrets.SNOWFLAKE_SCHEMA }}" \
+                    --arg snowflake_role "${{ secrets.SNOWFLAKE_ROLE }}" \
+                    --arg snowflake_token "${{ secrets.SNOWFLAKE_TOKEN }}" \
+                    '{
+                      "APP_ENV": $app_env,
+                      "APP_VERSION": $app_version,
+                      "SPRING_PROFILES_ACTIVE": $spring_profiles,
+                      "SPRING_DATASOURCE_USERNAME": $datasource_username,
+                      "SPRING_DATASOURCE_PASSWORD": $datasource_password,
+                      "SNOWFLAKE_ACCOUNT": $snowflake_account,
+                      "SNOWFLAKE_WAREHOUSE": $snowflake_warehouse,
+                      "SNOWFLAKE_DATABASE": $snowflake_database,
+                      "SNOWFLAKE_SCHEMA": $snowflake_schema,
+                      "SNOWFLAKE_ROLE": $snowflake_role,
+                      "SNOWFLAKE_TOKEN": $snowflake_token
+                    }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
                   ;;
                 alerts)
                   echo "host_port=8085" >> $GITHUB_OUTPUT
-                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
+                  # Create environment JSON with HTTPS URLs for alerts service
+                  jq -n \
+                    --arg app_env "${{ env.APP_ENV }}" \
+                    --arg app_version "${{ env.APP_VERSION }}" \
+                    --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
+                    --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
+                    --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
+                    --arg snowflake_account "${{ secrets.SNOWFLAKE_ACCOUNT }}" \
+                    --arg snowflake_warehouse "${{ secrets.SNOWFLAKE_WAREHOUSE }}" \
+                    --arg snowflake_database "${{ secrets.SNOWFLAKE_DATABASE }}" \
+                    --arg snowflake_schema "${{ secrets.SNOWFLAKE_SCHEMA }}" \
+                    --arg snowflake_role "${{ secrets.SNOWFLAKE_ROLE }}" \
+                    --arg snowflake_token "${{ secrets.SNOWFLAKE_TOKEN }}" \
+                    '{
+                      "APP_ENV": $app_env,
+                      "APP_VERSION": $app_version,
+                      "SPRING_PROFILES_ACTIVE": $spring_profiles,
+                      "SPRING_DATASOURCE_USERNAME": $datasource_username,
+                      "SPRING_DATASOURCE_PASSWORD": $datasource_password,
+                      "SNOWFLAKE_ACCOUNT": $snowflake_account,
+                      "SNOWFLAKE_WAREHOUSE": $snowflake_warehouse,
+                      "SNOWFLAKE_DATABASE": $snowflake_database,
+                      "SNOWFLAKE_SCHEMA": $snowflake_schema,
+                      "SNOWFLAKE_ROLE": $snowflake_role,
+                      "SNOWFLAKE_TOKEN": $snowflake_token,
+                      "NOTIFICATION_UNSUBSCRIBE_LINK": "https://accounts.phshoesproject.com/api/v1/user-accounts/unsubscribe",
+                      "VERIFICATION_LINK": "https://accounts.phshoesproject.com/verify"
+                    }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
                   ;;
                 *)
                   echo "host_port=${CONTAINER_PORT}" >> $GITHUB_OUTPUT

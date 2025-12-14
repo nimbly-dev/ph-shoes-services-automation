@@ -2,13 +2,13 @@ ecs_instance_type = "t3.micro"
 
 # t3.micro can support 2 containers per instance
 # Start with 1 instance, ECS will auto-scale up to 3 as containers are deployed
-ecs_desired_capacity = 1
+ecs_desired_capacity = 2
 ecs_min_size = 1
 ecs_max_size = 3
 
 # Memory allocation optimized for t3.micro constraints
 frontend_memory_mb = 128
-backend_memory_mb = 200
+backend_memory_mb = 456
 
 ecs_instance_ingress_rules = [
   {

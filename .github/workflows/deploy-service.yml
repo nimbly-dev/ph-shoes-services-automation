@@ -158,6 +158,16 @@ jobs:
           echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port (memory: $TF_VAR_memory MB)"
           terraform apply -input=false -auto-approve
 
+      - name: Trigger DNS update (frontend only)
+        if: env.SERVICE == 'frontend'
+        run: |
+          echo "Triggering DNS update workflow for frontend deployment..."
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/dispatches \
+            -d '{"event_type":"update-dns","client_payload":{"service":"${{ env.SERVICE }}","trigger":"deployment"}}'
+
       - name: Wait for deployment health check
         run: |
           if [ "${{ env.SERVICE }}" = "frontend" ]; then

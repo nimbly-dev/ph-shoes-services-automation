@@ -48,6 +48,11 @@ jobs:
             exit 1
           fi
 
+      - name: Debug output
+        run: |
+          echo "Plan output: '${{ steps.plan.outputs.changes }}'"
+          echo "Type check: ${{ steps.plan.outputs.changes == '2' }}"
+
       - name: Apply DNS updates if needed
         if: steps.plan.outputs.changes == '2'
         working-directory: terraform-core

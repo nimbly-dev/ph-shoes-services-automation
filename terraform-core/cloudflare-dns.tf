@@ -11,9 +11,9 @@ resource "cloudflare_record" "frontend" {
   count   = var.use_cloudflare_dns ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "phshoesproject.com"
-  value   = local.instance_ip
+  content = local.instance_ip
   type    = "A"
-  ttl     = 300
+  ttl     = 1     # TTL must be 1 when proxied is true
   proxied = true  # Enable Cloudflare proxy for HTTPS
   comment = "Frontend SPA - managed by Terraform"
 }
@@ -23,9 +23,9 @@ resource "cloudflare_record" "catalog" {
   count   = var.use_cloudflare_dns ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "catalog"
-  value   = local.instance_ip
+  content = local.instance_ip
   type    = "A"
-  ttl     = 300
+  ttl     = 1     # TTL must be 1 when proxied is true
   proxied = true  # Enable Cloudflare proxy for HTTPS
   comment = "Catalog service - managed by Terraform"
 }
@@ -34,9 +34,9 @@ resource "cloudflare_record" "text_search" {
   count   = var.use_cloudflare_dns ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "text-search"
-  value   = local.instance_ip
+  content = local.instance_ip
   type    = "A"
-  ttl     = 300
+  ttl     = 1     # TTL must be 1 when proxied is true
   proxied = true  # Enable Cloudflare proxy for HTTPS
   comment = "Text search service - managed by Terraform"
 }
@@ -45,9 +45,9 @@ resource "cloudflare_record" "accounts" {
   count   = var.use_cloudflare_dns ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "accounts"
-  value   = local.instance_ip
+  content = local.instance_ip
   type    = "A"
-  ttl     = 300
+  ttl     = 1     # TTL must be 1 when proxied is true
   proxied = true  # Enable Cloudflare proxy for HTTPS
   comment = "User accounts service - managed by Terraform"
 }
@@ -56,9 +56,9 @@ resource "cloudflare_record" "alerts" {
   count   = var.use_cloudflare_dns ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "alerts"
-  value   = local.instance_ip
+  content = local.instance_ip
   type    = "A"
-  ttl     = 300
+  ttl     = 1     # TTL must be 1 when proxied is true
   proxied = true  # Enable Cloudflare proxy for HTTPS
   comment = "Alerts service - managed by Terraform"
 }

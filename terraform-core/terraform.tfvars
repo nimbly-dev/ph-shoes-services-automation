@@ -1,9 +1,9 @@
 ecs_instance_type = "t3.micro"
 
 # t3.micro can support 2 containers per instance
-# With 5 services total, we need 3 instances minimum
-ecs_desired_capacity = 3
-ecs_min_size = 3
+# Start with 1 instance, ECS will auto-scale up to 3 as containers are deployed
+ecs_desired_capacity = 1
+ecs_min_size = 1
 ecs_max_size = 3
 
 # Memory allocation optimized for t3.micro constraints

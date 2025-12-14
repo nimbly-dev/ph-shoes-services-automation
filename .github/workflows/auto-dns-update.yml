@@ -2,8 +2,8 @@ name: Auto DNS Update
 
 on:
   workflow_dispatch: # Allow manual trigger
-  repository_dispatch:
-    types: [update-dns] # Triggered by deploy-service workflow
+  schedule:
+    - cron: '*/15 * * * *' # Run every 15 minutes to catch IP changes
 
 jobs:
   update-dns:

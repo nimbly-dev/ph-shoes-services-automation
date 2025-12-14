@@ -35,42 +35,13 @@ jobs:
           fi
           echo "✅ Cloudflare credentials configured"
 
-      - name: Initialize and plan Terraform
-        id: plan
+      - name: Apply DNS updates
         working-directory: terraform-core
         env:
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           terraform init
-          set +e
-          terraform plan -detailed-exitcode -out=tfplan
-          EXIT_CODE=$?
-          set -e
-          
-          echo "changes=$EXIT_CODE" >> $GITHUB_OUTPUT
-          
-          case $EXIT_CODE in
-            0) 
-              # Check if plan shows resources to add (means records don't exist in state)
-              if terraform show tfplan | grep -q "Plan: [1-9].* to add"; then
-                echo "📝 New DNS records to create - will apply"
-                echo "changes=2" >> $GITHUB_OUTPUT
-              else
-                echo "✅ No changes needed"
-              fi
-              ;;
-            1) echo "❌ Terraform plan failed"; exit 1 ;;
-            2) echo "📝 Changes detected - will apply" ;;
-          esac
-
-      - name: Apply DNS updates
-        if: steps.plan.outputs.changes == '2'
-        working-directory: terraform-core
-        env:
-          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-        run: |
           echo "🚀 Applying DNS updates..."
-          terraform apply -auto-approve tfplan
+          terraform apply -auto-approve
           echo "✅ DNS updates completed"

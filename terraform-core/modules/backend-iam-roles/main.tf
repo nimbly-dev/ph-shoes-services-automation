@@ -53,3 +53,37 @@ resource "aws_iam_role_policy" "task_secrets" {
     }]
   })
 }
+
+resource "aws_iam_role_policy" "task_dynamodb" {
+  name = "dynamodb-access"
+  role = aws_iam_role.task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "dynamodb:DescribeTable",
+        "dynamodb:CreateTable",
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem"
+      ]
+      Resource = [
+        "arn:aws:dynamodb:*:*:table/accounts",
+        "arn:aws:dynamodb:*:*:table/login_sessions", 
+        "arn:aws:dynamodb:*:*:table/account_verifications",
+        "arn:aws:dynamodb:*:*:table/email_suppressions",
+        "arn:aws:dynamodb:*:*:table/accounts/index/*",
+        "arn:aws:dynamodb:*:*:table/login_sessions/index/*",
+        "arn:aws:dynamodb:*:*:table/account_verifications/index/*",
+        "arn:aws:dynamodb:*:*:table/email_suppressions/index/*"
+      ]
+    }]
+  })
+}

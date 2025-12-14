@@ -51,7 +51,15 @@ jobs:
           echo "changes=$EXIT_CODE" >> $GITHUB_OUTPUT
           
           case $EXIT_CODE in
-            0) echo "✅ No changes needed" ;;
+            0) 
+              # Check if plan shows resources to add (means records don't exist in state)
+              if terraform show tfplan | grep -q "Plan: [1-9]"; then
+                echo "📝 New DNS records to create - will apply"
+                echo "changes=2" >> $GITHUB_OUTPUT
+              else
+                echo "✅ No changes needed"
+              fi
+              ;;
             1) echo "❌ Terraform plan failed"; exit 1 ;;
             2) echo "📝 Changes detected - will apply" ;;
           esac

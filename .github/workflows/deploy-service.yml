@@ -222,12 +222,12 @@ jobs:
           echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port (memory: $TF_VAR_memory MB)"
           terraform apply -input=false -auto-approve
 
-      - name: Trigger DNS update (frontend only)
+      - name: DNS update info (frontend only)
         if: env.SERVICE == 'frontend'
         run: |
-          echo "⚠️  DNS update trigger temporarily disabled due to GitHub token permissions"
-          echo "📝 Manual DNS update required: Update Cloudflare A records to point to current EC2 instance IP"
-          echo "🔍 Current instance IP can be found in AWS EC2 console"
+          echo "✅ Frontend deployment completed"
+          echo "📝 DNS will be automatically updated by scheduled workflow within 15 minutes"
+          echo "🔍 Or manually trigger 'Auto DNS Update' workflow for immediate update"
 
       - name: Wait for deployment health check
         run: |

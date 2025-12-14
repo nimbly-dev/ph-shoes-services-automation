@@ -33,6 +33,11 @@ module "dynamic_dns" {
       domain       = "alerts"
       description  = "Alerts service"
     }
+    user_accounts = {
+      service_name = "ph-shoes-services-automation-user-accounts"
+      domain       = "accounts"
+      description  = "User accounts service"
+    }
   }
 
   tags = local.common_tags
@@ -50,17 +55,6 @@ resource "cloudflare_record" "text_search" {
   comment = "Text search service - Fallback routing (service not yet deployed)"
 }
 
-resource "cloudflare_record" "accounts" {
-  count   = var.use_cloudflare_dns ? 1 : 0
-  zone_id = var.cloudflare_zone_id
-  name    = "accounts"
-  content = local.fallback_ip
-  type    = "A"
-  ttl     = 1
-  proxied = true
-  comment = "User accounts service - Fallback routing (service not yet deployed)"
-}
-
 # Output the DNS records for verification
 output "cloudflare_dns_records" {
   value = var.use_cloudflare_dns ? merge(
@@ -70,11 +64,6 @@ output "cloudflare_dns_records" {
         hostname = cloudflare_record.text_search[0].hostname
         ip       = cloudflare_record.text_search[0].content
         domain   = cloudflare_record.text_search[0].name
-      }
-      accounts = {
-        hostname = cloudflare_record.accounts[0].hostname
-        ip       = cloudflare_record.accounts[0].content
-        domain   = cloudflare_record.accounts[0].name
       }
     }
   ) : {}

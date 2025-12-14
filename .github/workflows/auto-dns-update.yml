@@ -32,6 +32,29 @@ jobs:
         run: |
           echo "TF_VAR_cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" >> $GITHUB_ENV
           echo "TF_VAR_cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" >> $GITHUB_ENV
+          
+      - name: Debug Cloudflare credentials
+        run: |
+          echo "Checking if Cloudflare secrets are set..."
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "❌ CLOUDFLARE_API_TOKEN is empty or not set"
+          else
+            echo "✅ CLOUDFLARE_API_TOKEN is set (length: ${#CLOUDFLARE_API_TOKEN})"
+            echo "Token starts with: ${CLOUDFLARE_API_TOKEN:0:8}..."
+          fi
+          
+          if [ -z "${{ secrets.CLOUDFLARE_ZONE_ID }}" ]; then
+            echo "❌ CLOUDFLARE_ZONE_ID is empty or not set"
+          else
+            echo "✅ CLOUDFLARE_ZONE_ID is set: ${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          fi
+          
+          # Test the API token
+          echo "Testing Cloudflare API token..."
+          curl -s "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" | jq .
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Check for infrastructure changes
         id: plan

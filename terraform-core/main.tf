@@ -147,8 +147,9 @@ data "aws_instances" "ecs_instances" {
   depends_on = [module.ecs_cluster]
 }
 
-# Route 53 A record pointing to EC2 instance
+# Route 53 A records (only when NOT using Cloudflare)
 resource "aws_route53_record" "frontend" {
+  count   = var.use_cloudflare_dns ? 0 : 1
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = "phshoesproject.com"
   type    = "A"
@@ -157,6 +158,7 @@ resource "aws_route53_record" "frontend" {
 }
 
 resource "aws_route53_record" "catalog" {
+  count   = var.use_cloudflare_dns ? 0 : 1
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = "catalog.phshoesproject.com"
   type    = "A"
@@ -165,6 +167,7 @@ resource "aws_route53_record" "catalog" {
 }
 
 resource "aws_route53_record" "text_search" {
+  count   = var.use_cloudflare_dns ? 0 : 1
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = "text-search.phshoesproject.com"
   type    = "A"
@@ -173,6 +176,7 @@ resource "aws_route53_record" "text_search" {
 }
 
 resource "aws_route53_record" "accounts" {
+  count   = var.use_cloudflare_dns ? 0 : 1
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = "accounts.phshoesproject.com"
   type    = "A"
@@ -181,6 +185,7 @@ resource "aws_route53_record" "accounts" {
 }
 
 resource "aws_route53_record" "alerts" {
+  count   = var.use_cloudflare_dns ? 0 : 1
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = "alerts.phshoesproject.com"
   type    = "A"

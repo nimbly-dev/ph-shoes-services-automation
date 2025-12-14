@@ -43,9 +43,14 @@ jobs:
           EXIT_CODE=$?
           set -e
           echo "changes=$EXIT_CODE" >> $GITHUB_OUTPUT
+          echo "Terraform plan exit code: $EXIT_CODE"
           if [ $EXIT_CODE -eq 1 ]; then
             echo "Terraform plan failed"
             exit 1
+          elif [ $EXIT_CODE -eq 2 ]; then
+            echo "Changes detected - will apply"
+          else
+            echo "No changes detected"
           fi
 
       - name: Debug output
@@ -60,6 +65,14 @@ jobs:
           echo "Infrastructure changes detected, applying updates..."
           terraform apply -auto-approve tfplan
 
-      - name: No changes needed
+      - name: Force apply if changes detected in plan output
         if: steps.plan.outputs.changes == '0'
-        run: echo "No infrastructure changes detected"
+        working-directory: terraform-core
+        run: |
+          # Check if the plan file contains actual changes
+          if terraform show tfplan | grep -q "Plan:.*to add.*to change.*to destroy"; then
+            echo "Plan contains changes despite exit code 0, applying anyway..."
+            terraform apply -auto-approve tfplan
+          else
+            echo "No infrastructure changes detected"
+          fi

@@ -54,5 +54,5 @@ resource "cloudflare_record" "service" {
   type    = "A"
   ttl     = 1     # TTL must be 1 when proxied is true
   proxied = true  # Enable Cloudflare proxy for HTTPS
-  comment = "${each.value.description} - Dynamic routing to instance running ${each.value.service_name}"
+  comment = "${each.value.description} - Dynamic routing"
 }

@@ -257,4 +257,24 @@ variable "log_retention_days" {
   default     = 7
 }
 
+# Cloudflare variables
+variable "cloudflare_api_token" {
+  description = "Cloudflare API token for DNS management"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "cloudflare_zone_id" {
+  description = "Cloudflare zone ID for phshoesproject.com"
+  type        = string
+  default     = ""
+}
+
+variable "use_cloudflare_dns" {
+  description = "Use Cloudflare for DNS management instead of Route53"
+  type        = bool
+  default     = false
+}
+
 

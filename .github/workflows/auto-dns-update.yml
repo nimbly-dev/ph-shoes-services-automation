@@ -27,6 +27,12 @@ jobs:
         with:
           terraform_version: 1.5.0
 
+      - name: Set Terraform variables
+        working-directory: terraform-core
+        run: |
+          echo "TF_VAR_cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" >> $GITHUB_ENV
+          echo "TF_VAR_cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" >> $GITHUB_ENV
+
       - name: Check for infrastructure changes
         id: plan
         working-directory: terraform-core

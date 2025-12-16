@@ -122,6 +122,7 @@ jobs:
                   ;;
                 user-accounts)
                   echo "host_port=8082" >> $GITHUB_OUTPUT
+                  echo "port=8082" >> $GITHUB_OUTPUT
                   # Create environment JSON with HTTPS URLs and crypto secrets for user-accounts service
                   jq -n \
                     --arg app_env "${{ env.APP_ENV }}" \

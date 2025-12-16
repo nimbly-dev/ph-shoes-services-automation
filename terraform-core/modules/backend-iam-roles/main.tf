@@ -81,10 +81,12 @@ resource "aws_iam_role_policy" "task_dynamodb" {
         "arn:aws:dynamodb:*:*:table/login_sessions", 
         "arn:aws:dynamodb:*:*:table/account_verifications",
         "arn:aws:dynamodb:*:*:table/email_suppressions",
+        "arn:aws:dynamodb:*:*:table/alerts",
         "arn:aws:dynamodb:*:*:table/accounts/index/*",
         "arn:aws:dynamodb:*:*:table/login_sessions/index/*",
         "arn:aws:dynamodb:*:*:table/account_verifications/index/*",
-        "arn:aws:dynamodb:*:*:table/email_suppressions/index/*"
+        "arn:aws:dynamodb:*:*:table/email_suppressions/index/*",
+        "arn:aws:dynamodb:*:*:table/alerts/index/*"
       ]
     }]
   })

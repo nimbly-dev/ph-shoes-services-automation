@@ -1,8 +1,8 @@
 ecs_instance_type = "t3.micro"
 
 # t3.micro can support 2 containers per instance
-# Start with 1 instance, ECS will auto-scale up to 3 as containers are deployed
-ecs_desired_capacity = 2
+# Scale to 3 instances to support all 5 services (frontend + 4 backends)
+ecs_desired_capacity = 3
 ecs_min_size = 1
 ecs_max_size = 3
 

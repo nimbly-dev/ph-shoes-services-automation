@@ -300,10 +300,13 @@ jobs:
             echo "missing_backends=false" >> $GITHUB_ENV
           fi
 
-      - name: Wait for deployment health check
+      - name: Wait for ECS rollout completion and trigger DNS update
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ env.SERVICE }}" = "frontend" ]; then
-            echo "Checking ECS service status..."
+            echo "🔄 Waiting for ECS rollout to complete..."
+            DNS_TRIGGERED=false
             
             for i in {1..30}; do
               SERVICE_INFO=$(aws ecs describe-services \
@@ -318,6 +321,7 @@ jobs:
               
               echo "ECS Status: $RUNNING/$DESIRED tasks running, Rollout: $ROLLOUT_STATE"
               
+              # Start health check when rollout completes
               if [ "$RUNNING" = "$DESIRED" ] && [ "$RUNNING" != "0" ] && [ "$ROLLOUT_STATE" = "COMPLETED" ]; then
                 echo "✅ ECS tasks are running, checking URL health..."
                 
@@ -341,8 +345,17 @@ jobs:
                   echo "🔧 Frontend deployment failed - site should be accessible even without backends"
                   if [ "$STATUS" = "502" ]; then
                     echo "💡 502 error indicates nginx configuration or container port mapping issue"
+                  elif [ "$STATUS" = "522" ]; then
+                    echo "💡 522 error indicates DNS mismatch - triggering DNS update if not done yet"
+                    if [ "$DNS_TRIGGERED" = "false" ]; then
+                      echo "🌐 Triggering DNS update to fix 522 error..."
+                      gh workflow run auto-dns-update.yml || echo "⚠️ DNS update trigger failed"
+                      DNS_TRIGGERED=true
+                      echo "⏳ Waiting 90 seconds for DNS propagation..."
+                      sleep 90
+                    fi
                   fi
-                  # Continue waiting instead of exiting - don't accept 502 as success
+                  # Continue waiting instead of exiting - don't accept 502/522 as success
                 fi
               fi
               

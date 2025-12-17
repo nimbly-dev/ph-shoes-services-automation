@@ -264,46 +264,6 @@ jobs:
           echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port (memory: $TF_VAR_memory MB)"
           terraform apply -input=false -auto-approve
 
-      - name: Wait for ECS task to start
-        run: |
-          echo "⏳ Waiting for ECS task to start before updating DNS..."
-          sleep 30
-
-      - name: Validate Cloudflare credentials
-        run: |
-          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.CLOUDFLARE_ZONE_ID }}" ]; then
-            echo "⚠️  Missing Cloudflare credentials - DNS update will be skipped"
-            echo "dns_update_enabled=false" >> $GITHUB_ENV
-          else
-            echo "✅ Cloudflare credentials configured"
-            echo "dns_update_enabled=true" >> $GITHUB_ENV
-          fi
-
-      - name: Update DNS Records
-        if: env.dns_update_enabled == 'true'
-        working-directory: terraform-core
-        env:
-          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-        run: |
-          echo "🔄 Updating DNS records after ${{ env.SERVICE }} deployment"
-          
-          # Initialize terraform (already done in main workflow, but safe to repeat)
-          terraform init -reconfigure
-          
-          # Apply DNS updates
-          echo "📍 Applying DNS updates to point domains to current instance IPs..."
-          terraform apply -auto-approve
-          
-          echo "✅ DNS records updated successfully"
-          echo "🌐 Domains now route to correct instances after restart"
-
-      - name: DNS update skipped
-        if: env.dns_update_enabled == 'false'
-        run: |
-          echo "⚠️  DNS update skipped due to missing Cloudflare credentials"
-          echo "📝 DNS will be updated by the daily scheduled workflow at 6 AM UTC"
-
       - name: Check for missing backend services (frontend only)
         if: env.SERVICE == 'frontend'
         run: |

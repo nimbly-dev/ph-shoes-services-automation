@@ -281,6 +281,42 @@ jobs:
           echo "⚠️  DNS update skipped due to missing Cloudflare credentials"
           echo "📝 DNS will be updated by the daily scheduled workflow at 6 AM UTC"
 
+      - name: Check for missing backend services (frontend only)
+        if: env.SERVICE == 'frontend'
+        run: |
+          echo "🔍 Checking if backend services are running..."
+          
+          # Check if any backend services are missing
+          MISSING_SERVICES=""
+          
+          # Check each backend service
+          for service in catalog user-accounts alerts; do
+            RUNNING=$(aws ecs describe-services \
+              --cluster ph-shoes-services-ecs \
+              --services ph-shoes-services-automation-$service \
+              --region ${{ env.AWS_REGION }} \
+              --query 'services[0].runningCount' \
+              --output text 2>/dev/null || echo "0")
+            
+            if [ "$RUNNING" = "0" ] || [ "$RUNNING" = "None" ]; then
+              MISSING_SERVICES="$MISSING_SERVICES $service"
+              echo "❌ Service $service is not running"
+            else
+              echo "✅ Service $service is running ($RUNNING tasks)"
+            fi
+          done
+          
+          if [ -n "$MISSING_SERVICES" ]; then
+            echo "⚠️  Warning: Backend services are not running:$MISSING_SERVICES"
+            echo "💡 Frontend will work but API calls may fail with 502 errors"
+            echo "🔧 To fix: Deploy the missing backend services or use the 'Deploy All Services' workflow"
+            echo ""
+            echo "missing_backends=true" >> $GITHUB_ENV
+          else
+            echo "✅ All backend services are running"
+            echo "missing_backends=false" >> $GITHUB_ENV
+          fi
+
       - name: Wait for deployment health check
         run: |
           if [ "${{ env.SERVICE }}" = "frontend" ]; then
@@ -307,6 +343,20 @@ jobs:
                 
                 if [ "$STATUS" = "200" ]; then
                   echo "✅ Site is healthy (HTTP $STATUS)"
+                  
+                  # Additional check if backends are missing
+                  if [ "${{ env.missing_backends }}" = "true" ]; then
+                    echo ""
+                    echo "⚠️  IMPORTANT: Frontend is running but backend services are missing!"
+                    echo "🔧 API calls will fail with 502 errors until backend services are deployed"
+                    echo "💡 Use 'Deploy All Services' workflow or deploy individual backend services"
+                  fi
+                  
+                  exit 0
+                elif [ "$STATUS" = "502" ] && [ "${{ env.missing_backends }}" = "true" ]; then
+                  echo "⚠️  Getting 502 errors - this is expected when backend services are missing"
+                  echo "✅ Frontend container is running, but nginx can't proxy to missing backends"
+                  echo "🔧 Deploy backend services to resolve 502 errors"
                   exit 0
                 else
                   echo "URL returned HTTP $STATUS, waiting..."

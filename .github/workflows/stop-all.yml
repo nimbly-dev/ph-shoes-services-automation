@@ -40,5 +40,27 @@ jobs:
             --desired-capacity 0 \
             --region ap-southeast-1
           
-          echo "✅ All services stopped. EC2 instances will terminate in ~5 minutes."
+          echo "⏳ Waiting 30 seconds for tasks to stop..."
+          sleep 30
+
+      - name: Terminate leftover instances
+        run: |
+          echo "🔍 Checking for running instances..."
+          INSTANCE_IDS=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=ph-shoes-services-ecs-instance" \
+                      "Name=instance-state-name,Values=running,pending" \
+            --region ap-southeast-1 \
+            --query 'Reservations[*].Instances[*].InstanceId' \
+            --output text)
+          
+          if [ -n "$INSTANCE_IDS" ]; then
+            echo "🛑 Terminating instances: $INSTANCE_IDS"
+            aws ec2 terminate-instances \
+              --instance-ids $INSTANCE_IDS \
+              --region ap-southeast-1
+            echo "✅ All instances terminated"
+          else
+            echo "✅ No instances to terminate"
+          fi
+          
           echo "💰 Cost: $0/hour while stopped"

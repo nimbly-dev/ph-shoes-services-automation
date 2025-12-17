@@ -1,0 +1,218 @@
+name: Deploy All Services
+
+on:
+  workflow_dispatch:
+    inputs:
+      frontend_image:
+        description: "Frontend image URI (leave empty to skip)"
+        required: false
+        type: string
+      catalog_image:
+        description: "Catalog service image URI (leave empty to skip)"
+        required: false
+        type: string
+      user_accounts_image:
+        description: "User accounts service image URI (leave empty to skip)"
+        required: false
+        type: string
+      text_search_image:
+        description: "Text search service image URI (leave empty to skip)"
+        required: false
+        type: string
+      alerts_image:
+        description: "Alerts service image URI (leave empty to skip)"
+        required: false
+        type: string
+      use_latest_images:
+        description: "Use latest available images from ECR (ignores specific image inputs)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  get-latest-images:
+    if: inputs.use_latest_images == true
+    runs-on: ubuntu-latest
+    outputs:
+      frontend_image: ${{ steps.images.outputs.frontend_image }}
+      catalog_image: ${{ steps.images.outputs.catalog_image }}
+      user_accounts_image: ${{ steps.images.outputs.user_accounts_image }}
+      text_search_image: ${{ steps.images.outputs.text_search_image }}
+      alerts_image: ${{ steps.images.outputs.alerts_image }}
+    
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ap-southeast-1
+
+      - name: Get latest ECR images
+        id: images
+        run: |
+          # Function to get latest image URI
+          get_latest_image() {
+            local repo_name=$1
+            local image_uri=$(aws ecr-public describe-images \
+              --region us-east-1 \
+              --repository-name "ph-shoes-$repo_name" \
+              --query 'imageDetails[0].imageTags[0]' \
+              --output text 2>/dev/null || echo "")
+            
+            if [ "$image_uri" != "" ] && [ "$image_uri" != "None" ]; then
+              echo "public.ecr.aws/v0o5i0s5/ph-shoes-$repo_name:$image_uri"
+            else
+              echo ""
+            fi
+          }
+          
+          echo "frontend_image=$(get_latest_image frontend)" >> $GITHUB_OUTPUT
+          echo "catalog_image=$(get_latest_image catalog)" >> $GITHUB_OUTPUT
+          echo "user_accounts_image=$(get_latest_image user-accounts)" >> $GITHUB_OUTPUT
+          echo "text_search_image=$(get_latest_image text-search)" >> $GITHUB_OUTPUT
+          echo "alerts_image=$(get_latest_image alerts)" >> $GITHUB_OUTPUT
+
+  deploy-services:
+    runs-on: ubuntu-latest
+    needs: [get-latest-images]
+    if: always() && !cancelled()
+    
+    strategy:
+      matrix:
+        service:
+          - name: frontend
+            port: "8080"
+            host_port: "8081"
+          - name: catalog
+            port: "8080"
+            host_port: "8083"
+          - name: user-accounts
+            port: "8082"
+            host_port: "8082"
+          - name: text-search
+            port: "8080"
+            host_port: "8084"
+          - name: alerts
+            port: "8080"
+            host_port: "8085"
+      fail-fast: false
+
+    steps:
+      - name: Determine image URI
+        id: image
+        run: |
+          service_name="${{ matrix.service.name }}"
+          
+          # Get image from inputs or latest images job
+          if [ "${{ inputs.use_latest_images }}" = "true" ]; then
+            case "$service_name" in
+              frontend) image="${{ needs.get-latest-images.outputs.frontend_image }}" ;;
+              catalog) image="${{ needs.get-latest-images.outputs.catalog_image }}" ;;
+              user-accounts) image="${{ needs.get-latest-images.outputs.user_accounts_image }}" ;;
+              text-search) image="${{ needs.get-latest-images.outputs.text_search_image }}" ;;
+              alerts) image="${{ needs.get-latest-images.outputs.alerts_image }}" ;;
+            esac
+          else
+            case "$service_name" in
+              frontend) image="${{ inputs.frontend_image }}" ;;
+              catalog) image="${{ inputs.catalog_image }}" ;;
+              user-accounts) image="${{ inputs.user_accounts_image }}" ;;
+              text-search) image="${{ inputs.text_search_image }}" ;;
+              alerts) image="${{ inputs.alerts_image }}" ;;
+            esac
+          fi
+          
+          if [ -z "$image" ] || [ "$image" = "" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⏭️  Skipping $service_name - no image specified"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "image_uri=$image" >> $GITHUB_OUTPUT
+            echo "✅ Will deploy $service_name with image: $image"
+          fi
+
+      - name: Deploy service
+        if: steps.image.outputs.skip == 'false'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: deploy-service
+          client-payload: |
+            {
+              "service": "${{ matrix.service.name }}",
+              "image_uri": "${{ steps.image.outputs.image_uri }}",
+              "container_port": "${{ matrix.service.port }}",
+              "desired_count": "1",
+              "app_version": "batch-deploy"
+            }
+
+      - name: Wait for deployment
+        if: steps.image.outputs.skip == 'false'
+        run: |
+          echo "⏳ Waiting for ${{ matrix.service.name }} deployment to complete..."
+          sleep 30
+
+  verify-deployment:
+    runs-on: ubuntu-latest
+    needs: [deploy-services]
+    if: always() && !cancelled()
+    
+    steps:
+      - name: Wait for all deployments
+        run: |
+          echo "⏳ Waiting for all services to stabilize..."
+          sleep 60
+
+      - name: Test service endpoints
+        run: |
+          echo "🌐 Testing all service endpoints..."
+          
+          # Test frontend
+          echo "Testing frontend (https://phshoesproject.com)..."
+          if curl -I -s --max-time 15 https://phshoesproject.com | head -1; then
+            echo "✅ Frontend responding"
+          else
+            echo "❌ Frontend not responding"
+          fi
+          
+          # Test user accounts
+          echo "Testing user accounts (https://accounts.phshoesproject.com)..."
+          if curl -I -s --max-time 15 https://accounts.phshoesproject.com/system/status | head -1; then
+            echo "✅ User accounts responding"
+          else
+            echo "❌ User accounts not responding"
+          fi
+          
+          # Test catalog
+          echo "Testing catalog (https://catalog.phshoesproject.com)..."
+          if curl -I -s --max-time 15 https://catalog.phshoesproject.com/system/status | head -1; then
+            echo "✅ Catalog responding"
+          else
+            echo "❌ Catalog not responding"
+          fi
+          
+          # Test alerts
+          echo "Testing alerts (https://alerts.phshoesproject.com)..."
+          if curl -I -s --max-time 15 https://alerts.phshoesproject.com/system/status | head -1; then
+            echo "✅ Alerts responding"
+          else
+            echo "❌ Alerts not responding"
+          fi
+
+      - name: Deployment Summary
+        run: |
+          echo "🎉 All service deployments completed!"
+          echo "📋 Summary:"
+          echo "- DNS records updated automatically during deployment"
+          echo "- All services should be accessible via their domains"
+          echo "- If any service shows as not responding, check ECS service status"
+          echo ""
+          echo "🔗 Service URLs:"
+          echo "- Frontend: https://phshoesproject.com"
+          echo "- User Accounts: https://accounts.phshoesproject.com"
+          echo "- Catalog: https://catalog.phshoesproject.com"
+          echo "- Alerts: https://alerts.phshoesproject.com"

@@ -241,12 +241,25 @@ jobs:
           echo "Deploying $SERVICE with image $IMAGE_URI on port $TF_VAR_container_port (memory: $TF_VAR_memory MB)"
           terraform apply -input=false -auto-approve
 
-      - name: DNS update info (frontend only)
-        if: env.SERVICE == 'frontend'
+      - name: Wait for ECS task to start
         run: |
-          echo "✅ Frontend deployment completed"
-          echo "📝 DNS will be automatically updated by scheduled workflow within 15 minutes"
-          echo "🔍 Or manually trigger 'Auto DNS Update' workflow for immediate update"
+          echo "⏳ Waiting for ECS task to start before updating DNS..."
+          sleep 30
+
+      - name: Trigger DNS Update
+        run: |
+          echo "🔄 Triggering DNS update after ${{ env.SERVICE }} deployment"
+          gh workflow run auto-dns-update.yml \
+            --repo ${{ github.repository }} \
+            --ref master
+          echo "✅ DNS update workflow triggered"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: DNS update info
+        run: |
+          echo "📍 DNS records will be updated to point to current instance IPs"
+          echo "🌐 This ensures domains route to the correct instances after restart"
 
       - name: Wait for deployment health check
         run: |

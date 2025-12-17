@@ -100,8 +100,8 @@ jobs:
               echo "log_group=/ecs/ph-shoes-services-automation-$SERVICE" >> $GITHUB_OUTPUT
               echo "exec_role=${{ secrets.FRONTEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
               echo "task_role=${{ secrets.FRONTEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=8080" >> $GITHUB_OUTPUT
-              echo "host_port=8081" >> $GITHUB_OUTPUT
+              echo "port=80" >> $GITHUB_OUTPUT
+              echo "host_port=8080" >> $GITHUB_OUTPUT
               echo "memory=128" >> $GITHUB_OUTPUT
               echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
               ;;

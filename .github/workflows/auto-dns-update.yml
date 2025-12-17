@@ -2,8 +2,10 @@ name: Auto DNS Update
 
 on:
   workflow_dispatch: # Allow manual trigger
+  repository_dispatch: # Allow triggering from other repositories
+    types: [service-deployed, dns-update-needed]
   schedule:
-    - cron: '*/15 * * * *' # Run every 15 minutes to catch IP changes
+    - cron: '0 6 * * *' # Run daily at 6 AM UTC (2 PM Singapore time) to catch IP changes
 
 jobs:
   update-dns:
@@ -35,6 +37,51 @@ jobs:
           fi
           echo "✅ Cloudflare credentials configured"
 
+      - name: Check ECS Service Status
+        run: |
+          echo "🔍 Checking ECS service status..."
+          aws ecs describe-services \
+            --cluster ph-shoes-services-ecs \
+            --services \
+              ph-shoes-services-automation-frontend \
+              ph-shoes-services-automation-catalog \
+              ph-shoes-services-automation-user-accounts \
+              ph-shoes-services-automation-alerts \
+            --query "services[*].{Name:serviceName,Running:runningCount,Desired:desiredCount}" \
+            --output table
+
+      - name: Check Current Instance IPs
+        run: |
+          echo "📍 Current instance distribution:"
+          
+          # Get tasks and their instances
+          TASKS=$(aws ecs list-tasks --cluster ph-shoes-services-ecs --query "taskArns[*]" --output text)
+          if [ -n "$TASKS" ]; then
+            aws ecs describe-tasks \
+              --cluster ph-shoes-services-ecs \
+              --tasks $TASKS \
+              --query "tasks[*].{Service:group,Instance:containerInstanceArn}" \
+              --output table
+            
+            # Get container instances and their IPs
+            CONTAINER_INSTANCES=$(aws ecs list-container-instances --cluster ph-shoes-services-ecs --query "containerInstanceArns[*]" --output text)
+            if [ -n "$CONTAINER_INSTANCES" ]; then
+              EC2_INSTANCES=$(aws ecs describe-container-instances \
+                --cluster ph-shoes-services-ecs \
+                --container-instances $CONTAINER_INSTANCES \
+                --query "containerInstances[*].ec2InstanceId" \
+                --output text)
+              
+              echo "🖥️  Instance IPs:"
+              aws ec2 describe-instances \
+                --instance-ids $EC2_INSTANCES \
+                --query "Reservations[*].Instances[*].{InstanceId:InstanceId,PublicIP:PublicIpAddress,State:State.Name}" \
+                --output table
+            fi
+          else
+            echo "❌ No tasks found - services may be scaled down"
+          fi
+
       - name: Apply DNS updates
         working-directory: terraform-core
         env:
@@ -45,3 +92,49 @@ jobs:
           echo "🚀 Applying DNS updates..."
           terraform apply -auto-approve
           echo "✅ DNS updates completed"
+
+      - name: Test Service Endpoints
+        run: |
+          echo "🌐 Testing service endpoints after DNS update..."
+          
+          # Wait a moment for DNS propagation
+          sleep 10
+          
+          # Test frontend
+          echo "Testing frontend..."
+          if curl -I -s --max-time 10 https://phshoesproject.com | head -1; then
+            echo "✅ Frontend responding"
+          else
+            echo "❌ Frontend not responding"
+          fi
+          
+          # Test user accounts
+          echo "Testing user accounts..."
+          if curl -I -s --max-time 10 https://accounts.phshoesproject.com/system/status | head -1; then
+            echo "✅ User accounts responding"
+          else
+            echo "❌ User accounts not responding"
+          fi
+          
+          # Test catalog
+          echo "Testing catalog..."
+          if curl -I -s --max-time 10 https://catalog.phshoesproject.com/system/status | head -1; then
+            echo "✅ Catalog responding"
+          else
+            echo "❌ Catalog not responding"
+          fi
+          
+          # Test alerts
+          echo "Testing alerts..."
+          if curl -I -s --max-time 10 https://alerts.phshoesproject.com/system/status | head -1; then
+            echo "✅ Alerts responding"
+          else
+            echo "❌ Alerts not responding"
+          fi
+
+      - name: Trigger DNS Update on Other Repos
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          echo "🔄 DNS update triggered by service deployment"
+          echo "Event: ${{ github.event.action }}"
+          echo "Service: ${{ github.event.client_payload.service_name || 'unknown' }}"

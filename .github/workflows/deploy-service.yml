@@ -336,13 +336,13 @@ jobs:
                   fi
                   
                   exit 0
-                elif [ "$STATUS" = "502" ] && [ "${{ env.missing_backends }}" = "true" ]; then
-                  echo "⚠️  Getting 502 errors - this is expected when backend services are missing"
-                  echo "✅ Frontend container is running, but nginx can't proxy to missing backends"
-                  echo "🔧 Deploy backend services to resolve 502 errors"
-                  exit 0
                 else
-                  echo "URL returned HTTP $STATUS, waiting..."
+                  echo "❌ URL returned HTTP $STATUS - Frontend should work independently!"
+                  echo "🔧 Frontend deployment failed - site should be accessible even without backends"
+                  if [ "$STATUS" = "502" ]; then
+                    echo "💡 502 error indicates nginx configuration or container port mapping issue"
+                  fi
+                  # Continue waiting instead of exiting - don't accept 502 as success
                 fi
               fi
               

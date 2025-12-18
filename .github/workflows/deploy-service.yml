@@ -85,166 +85,91 @@ jobs:
           terraform init -input=false -reconfigure \
             -backend-config="key=services-tf-state/deployments/${SERVICE}.tfstate"
 
-      - name: Set service-specific secrets
+      - name: Set service configuration
         id: secrets
         run: |
-          # Determine service type based on service name
-          if [ "$SERVICE" = "frontend" ]; then
-            SERVICE_TYPE="frontend"
-          else
-            SERVICE_TYPE="backend"
-          fi
+          # Set common configuration
+          echo "log_group=/ecs/ph-shoes-services-automation-$SERVICE" >> $GITHUB_OUTPUT
           
-          case "$SERVICE_TYPE" in
-            frontend)
-              echo "log_group=/ecs/ph-shoes-services-automation-$SERVICE" >> $GITHUB_OUTPUT
-              echo "exec_role=${{ secrets.FRONTEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "task_role=${{ secrets.FRONTEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=80" >> $GITHUB_OUTPUT
-              echo "host_port=8080" >> $GITHUB_OUTPUT
-              echo "memory=128" >> $GITHUB_OUTPUT
-              echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
-              ;;
-            backend)
-              echo "log_group=/ecs/ph-shoes-services-automation-$SERVICE" >> $GITHUB_OUTPUT
-              echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
-              echo "port=8080" >> $GITHUB_OUTPUT
-              echo "memory=456" >> $GITHUB_OUTPUT
-              
-              # Set host port based on service name
-              case "$SERVICE" in
-                catalog)
-                  echo "host_port=8083" >> $GITHUB_OUTPUT
-                  # Create environment JSON using jq for proper escaping
-                  jq -n \
-                    --arg app_env "${{ env.APP_ENV }}" \
-                    --arg app_version "${{ env.APP_VERSION }}" \
-                    --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
-                    --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
-                    --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
-                    --arg snowflake_account "${{ secrets.SNOWFLAKE_ACCOUNT }}" \
-                    --arg snowflake_warehouse "${{ secrets.SNOWFLAKE_WAREHOUSE }}" \
-                    --arg snowflake_database "${{ secrets.SNOWFLAKE_DATABASE }}" \
-                    --arg snowflake_schema "${{ secrets.SNOWFLAKE_SCHEMA }}" \
-                    --arg snowflake_role "${{ secrets.SNOWFLAKE_ROLE }}" \
-                    --arg snowflake_token "${{ secrets.SNOWFLAKE_TOKEN }}" \
-                    '{
-                      "APP_ENV": $app_env,
-                      "APP_VERSION": $app_version,
-                      "SPRING_PROFILES_ACTIVE": $spring_profiles,
-                      "SPRING_DATASOURCE_USERNAME": $datasource_username,
-                      "SPRING_DATASOURCE_PASSWORD": $datasource_password,
-                      "SNOWFLAKE_ACCOUNT": $snowflake_account,
-                      "SNOWFLAKE_WAREHOUSE": $snowflake_warehouse,
-                      "SNOWFLAKE_DATABASE": $snowflake_database,
-                      "SNOWFLAKE_SCHEMA": $snowflake_schema,
-                      "SNOWFLAKE_ROLE": $snowflake_role,
-                      "SNOWFLAKE_TOKEN": $snowflake_token
-                    }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
-                  ;;
-                user-accounts)
-                  echo "host_port=8082" >> $GITHUB_OUTPUT
-                  echo "port=8082" >> $GITHUB_OUTPUT
-                  # Create environment JSON with HTTPS URLs and crypto secrets for user-accounts service
-                  jq -n \
-                    --arg app_env "${{ env.APP_ENV }}" \
-                    --arg app_version "${{ env.APP_VERSION }}" \
-                    --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
-                    --arg hmac_pepper_b64 "${{ secrets.HMAC_PEPPER_B64 }}" \
-                    --arg aes_key_b64 "${{ secrets.AES_KEY_B64 }}" \
-                    --arg hmac_legacy_peppers_b64 "${{ secrets.HMAC_LEGACY_PEPPERS_B64 }}" \
-                    --arg jwt_secret "${{ secrets.JWT_SECRET }}" \
-                    '{
-                      "APP_ENV": $app_env,
-                      "APP_VERSION": $app_version,
-                      "SPRING_PROFILES_ACTIVE": $spring_profiles,
-                      "HMAC_PEPPER_B64": $hmac_pepper_b64,
-                      "AES_KEY_B64": $aes_key_b64,
-                      "HMAC_LEGACY_PEPPERS_B64": $hmac_legacy_peppers_b64,
-                      "JWT_SECRET": $jwt_secret,
-                      "NOTIFICATION_UNSUBSCRIBE_LINK": "https://accounts.phshoesproject.com/api/v1/user-accounts/unsubscribe",
-                      "VERIFICATION_LINK_BASE_URL": "https://accounts.phshoesproject.com/api/v1/verify/email",
-                      "VERIFICATION_NOT_ME_URL": "https://accounts.phshoesproject.com/api/v1/verify/email/not-me"
-                    }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
-                  ;;
-                text-search)
-                  echo "host_port=8084" >> $GITHUB_OUTPUT
-                  # Create environment JSON for text-search service
-                  jq -n \
-                    --arg app_env "${{ env.APP_ENV }}" \
-                    --arg app_version "${{ env.APP_VERSION }}" \
-                    --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
-                    --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
-                    --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
-                    --arg snowflake_account "${{ secrets.SNOWFLAKE_ACCOUNT }}" \
-                    --arg snowflake_warehouse "${{ secrets.SNOWFLAKE_WAREHOUSE }}" \
-                    --arg snowflake_database "${{ secrets.SNOWFLAKE_DATABASE }}" \
-                    --arg snowflake_schema "${{ secrets.SNOWFLAKE_SCHEMA }}" \
-                    --arg snowflake_role "${{ secrets.SNOWFLAKE_ROLE }}" \
-                    --arg snowflake_token "${{ secrets.SNOWFLAKE_TOKEN }}" \
-                    '{
-                      "APP_ENV": $app_env,
-                      "APP_VERSION": $app_version,
-                      "SPRING_PROFILES_ACTIVE": $spring_profiles,
-                      "SPRING_DATASOURCE_USERNAME": $datasource_username,
-                      "SPRING_DATASOURCE_PASSWORD": $datasource_password,
-                      "SNOWFLAKE_ACCOUNT": $snowflake_account,
-                      "SNOWFLAKE_WAREHOUSE": $snowflake_warehouse,
-                      "SNOWFLAKE_DATABASE": $snowflake_database,
-                      "SNOWFLAKE_SCHEMA": $snowflake_schema,
-                      "SNOWFLAKE_ROLE": $snowflake_role,
-                      "SNOWFLAKE_TOKEN": $snowflake_token
-                    }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
-                  ;;
-                alerts)
-                  echo "host_port=8085" >> $GITHUB_OUTPUT
-                  # Create environment JSON with HTTPS URLs and security variables for alerts service
-                  jq -n \
-                    --arg app_env "${{ env.APP_ENV }}" \
-                    --arg app_version "${{ env.APP_VERSION }}" \
-                    --arg aws_region "${{ env.AWS_REGION }}" \
-                    --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
-                    --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
-                    --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
-                    --arg snowflake_account "${{ secrets.SNOWFLAKE_ACCOUNT }}" \
-                    --arg snowflake_warehouse "${{ secrets.SNOWFLAKE_WAREHOUSE }}" \
-                    --arg snowflake_database "${{ secrets.SNOWFLAKE_DATABASE }}" \
-                    --arg snowflake_schema "${{ secrets.SNOWFLAKE_SCHEMA }}" \
-                    --arg snowflake_role "${{ secrets.SNOWFLAKE_ROLE }}" \
-                    --arg snowflake_token "${{ secrets.SNOWFLAKE_TOKEN }}" \
-                    --arg hmac_pepper_b64 "${{ secrets.HMAC_PEPPER_B64 }}" \
-                    --arg aes_key_b64 "${{ secrets.AES_KEY_B64 }}" \
-                    --arg hmac_legacy_peppers_b64 "${{ secrets.HMAC_LEGACY_PEPPERS_B64 }}" \
-                    --arg jwt_secret "${{ secrets.JWT_SECRET }}" \
-                    '{
-                      "APP_ENV": $app_env,
-                      "APP_VERSION": $app_version,
-                      "AWS_REGION": $aws_region,
-                      "SPRING_PROFILES_ACTIVE": $spring_profiles,
-                      "SPRING_DATASOURCE_USERNAME": $datasource_username,
-                      "SPRING_DATASOURCE_PASSWORD": $datasource_password,
-                      "SNOWFLAKE_ACCOUNT": $snowflake_account,
-                      "SNOWFLAKE_WAREHOUSE": $snowflake_warehouse,
-                      "SNOWFLAKE_DATABASE": $snowflake_database,
-                      "SNOWFLAKE_SCHEMA": $snowflake_schema,
-                      "SNOWFLAKE_ROLE": $snowflake_role,
-                      "SNOWFLAKE_TOKEN": $snowflake_token,
-                      "HMAC_PEPPER_B64": $hmac_pepper_b64,
-                      "AES_KEY_B64": $aes_key_b64,
-                      "HMAC_LEGACY_PEPPERS_B64": $hmac_legacy_peppers_b64,
-                      "JWT_SECRET": $jwt_secret,
-                      "NOTIFICATION_UNSUBSCRIBE_LINK": "https://accounts.phshoesproject.com/api/v1/user-accounts/unsubscribe",
-                      "VERIFICATION_LINK": "https://accounts.phshoesproject.com/verify"
-                    }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
-                  ;;
-                *)
-                  echo "host_port=${CONTAINER_PORT}" >> $GITHUB_OUTPUT
-                  echo "environment={\"APP_ENV\":\"${{ env.APP_ENV }}\",\"APP_VERSION\":\"${{ env.APP_VERSION }}\"}" >> $GITHUB_OUTPUT
-                  ;;
-              esac
-              ;;
-          esac
+          # Set service type and basic config
+          if [ "$SERVICE" = "frontend" ]; then
+            echo "exec_role=${{ secrets.FRONTEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
+            echo "task_role=${{ secrets.FRONTEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
+            echo "port=80" >> $GITHUB_OUTPUT
+            echo "host_port=8080" >> $GITHUB_OUTPUT
+            echo "memory=128" >> $GITHUB_OUTPUT
+            
+            # Frontend environment (minimal)
+            jq -n \
+              --arg app_env "${{ env.APP_ENV }}" \
+              --arg app_version "${{ env.APP_VERSION }}" \
+              '{
+                "APP_ENV": $app_env,
+                "APP_VERSION": $app_version
+              }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
+          else
+            # Backend services - shared configuration
+            echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
+            echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
+            echo "port=8080" >> $GITHUB_OUTPUT
+            echo "memory=456" >> $GITHUB_OUTPUT
+            
+            # Set service-specific host ports
+            case "$SERVICE" in
+              catalog) echo "host_port=8083" >> $GITHUB_OUTPUT ;;
+              user-accounts) echo "host_port=8082" >> $GITHUB_OUTPUT; echo "port=8082" >> $GITHUB_OUTPUT ;;
+              text-search) echo "host_port=8084" >> $GITHUB_OUTPUT ;;
+              alerts) echo "host_port=8085" >> $GITHUB_OUTPUT ;;
+              *) echo "host_port=8080" >> $GITHUB_OUTPUT ;;
+            esac
+            
+            # Shared backend environment (all secrets included)
+            jq -n \
+              --arg app_env "${{ env.APP_ENV }}" \
+              --arg app_version "${{ env.APP_VERSION }}" \
+              --arg aws_region "${{ env.AWS_REGION }}" \
+              --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
+              --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
+              --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
+              --arg snowflake_account "${{ secrets.SNOWFLAKE_ACCOUNT }}" \
+              --arg snowflake_warehouse "${{ secrets.SNOWFLAKE_WAREHOUSE }}" \
+              --arg snowflake_database "${{ secrets.SNOWFLAKE_DATABASE }}" \
+              --arg snowflake_schema "${{ secrets.SNOWFLAKE_SCHEMA }}" \
+              --arg snowflake_role "${{ secrets.SNOWFLAKE_ROLE }}" \
+              --arg snowflake_token "${{ secrets.SNOWFLAKE_TOKEN }}" \
+              --arg hmac_pepper_b64 "${{ secrets.HMAC_PEPPER_B64 }}" \
+              --arg aes_key_b64 "${{ secrets.AES_KEY_B64 }}" \
+              --arg hmac_legacy_peppers_b64 "${{ secrets.HMAC_LEGACY_PEPPERS_B64 }}" \
+              --arg jwt_secret "${{ secrets.JWT_SECRET }}" \
+              --arg openai_api_key "${{ secrets.OPENAI_API_KEY }}" \
+              --arg openai_org_id "${{ secrets.OPENAI_ORG_ID }}" \
+              --arg openai_project_id "${{ secrets.OPENAI_PROJECT_ID }}" \
+              '{
+                "APP_ENV": $app_env,
+                "APP_VERSION": $app_version,
+                "AWS_REGION": $aws_region,
+                "SPRING_PROFILES_ACTIVE": $spring_profiles,
+                "SPRING_DATASOURCE_USERNAME": $datasource_username,
+                "SPRING_DATASOURCE_PASSWORD": $datasource_password,
+                "SNOWFLAKE_ACCOUNT": $snowflake_account,
+                "SNOWFLAKE_WAREHOUSE": $snowflake_warehouse,
+                "SNOWFLAKE_DATABASE": $snowflake_database,
+                "SNOWFLAKE_SCHEMA": $snowflake_schema,
+                "SNOWFLAKE_ROLE": $snowflake_role,
+                "SNOWFLAKE_TOKEN": $snowflake_token,
+                "HMAC_PEPPER_B64": $hmac_pepper_b64,
+                "AES_KEY_B64": $aes_key_b64,
+                "HMAC_LEGACY_PEPPERS_B64": $hmac_legacy_peppers_b64,
+                "JWT_SECRET": $jwt_secret,
+                "OPENAI_API_KEY": $openai_api_key,
+                "OPENAI_ORG_ID": $openai_org_id,
+                "OPENAI_PROJECT_ID": $openai_project_id,
+                "NOTIFICATION_UNSUBSCRIBE_LINK": "https://accounts.phshoesproject.com/api/v1/user-accounts/unsubscribe",
+                "VERIFICATION_LINK_BASE_URL": "https://accounts.phshoesproject.com/api/v1/verify/email",
+                "VERIFICATION_NOT_ME_URL": "https://accounts.phshoesproject.com/api/v1/verify/email/not-me",
+                "VERIFICATION_LINK": "https://accounts.phshoesproject.com/verify"
+              }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
+          fi
 
       - name: Deploy via Terraform
         working-directory: terraform-service-deploy

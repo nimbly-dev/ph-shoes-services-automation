@@ -114,20 +114,28 @@ jobs:
             echo "port=8080" >> $GITHUB_OUTPUT
             echo "memory=456" >> $GITHUB_OUTPUT
             
-            # Set service-specific host ports
+            # Set service-specific host ports and container ports
             case "$SERVICE" in
               catalog) echo "host_port=8083" >> $GITHUB_OUTPUT ;;
               user-accounts) echo "host_port=8082" >> $GITHUB_OUTPUT; echo "port=8082" >> $GITHUB_OUTPUT ;;
-              text-search) echo "host_port=8084" >> $GITHUB_OUTPUT ;;
+              text-search) echo "host_port=8084" >> $GITHUB_OUTPUT; echo "port=8084" >> $GITHUB_OUTPUT ;;
               alerts) echo "host_port=8085" >> $GITHUB_OUTPUT ;;
               *) echo "host_port=8080" >> $GITHUB_OUTPUT ;;
             esac
             
             # Shared backend environment (all secrets included)
+            # Set service-specific SERVER_PORT
+            case "$SERVICE" in
+              user-accounts) SERVER_PORT="8082" ;;
+              text-search) SERVER_PORT="8084" ;;
+              *) SERVER_PORT="8080" ;;
+            esac
+            
             jq -n \
               --arg app_env "${{ env.APP_ENV }}" \
               --arg app_version "${{ env.APP_VERSION }}" \
               --arg aws_region "${{ env.AWS_REGION }}" \
+              --arg server_port "$SERVER_PORT" \
               --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
               --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
               --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
@@ -148,6 +156,7 @@ jobs:
                 "APP_ENV": $app_env,
                 "APP_VERSION": $app_version,
                 "AWS_REGION": $aws_region,
+                "SERVER_PORT": $server_port,
                 "SPRING_PROFILES_ACTIVE": $spring_profiles,
                 "SPRING_DATASOURCE_USERNAME": $datasource_username,
                 "SPRING_DATASOURCE_PASSWORD": $datasource_password,

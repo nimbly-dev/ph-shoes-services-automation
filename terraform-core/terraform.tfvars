@@ -22,6 +22,15 @@ ecs_instance_ingress_rules = [
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  },
+  # Backend service health endpoint ports (8082-8085)
+  # These ports are open for AWS ECS health checks and GitHub Actions deployment validation
+  # Nginx configuration restricts access to health endpoints only
+  {
+    from_port   = 8082
+    to_port     = 8085
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 ]
 

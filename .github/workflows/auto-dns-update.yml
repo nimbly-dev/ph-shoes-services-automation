@@ -3,7 +3,7 @@ name: Auto DNS Update
 on:
   workflow_dispatch: # Allow manual trigger
   repository_dispatch: # Allow triggering from other repositories
-    types: [service-deployed, dns-update-needed]
+    types: [service-deployed, dns-update-needed, dns-update-required]
   schedule:
     - cron: '0 6 * * *' # Run daily at 6 AM UTC (2 PM Singapore time) to catch IP changes
 
@@ -100,6 +100,59 @@ jobs:
           # Wait a moment for DNS propagation
           sleep 10
           
+          # If triggered by deployment, prioritize testing the deployed service
+          DEPLOYED_SERVICE="${{ github.event.client_payload.service_name || '' }}"
+          if [ -n "$DEPLOYED_SERVICE" ]; then
+            echo "🎯 Prioritizing validation of deployed service: $DEPLOYED_SERVICE"
+            
+            case "$DEPLOYED_SERVICE" in
+              frontend)
+                echo "Testing deployed frontend service..."
+                if curl -I -s --max-time 15 https://phshoesproject.com | head -1; then
+                  echo "✅ Deployed frontend service responding"
+                else
+                  echo "❌ Deployed frontend service not responding"
+                fi
+                ;;
+              user-accounts)
+                echo "Testing deployed user-accounts service..."
+                if curl -I -s --max-time 15 https://accounts.phshoesproject.com/system/status | head -1; then
+                  echo "✅ Deployed user-accounts service responding"
+                else
+                  echo "❌ Deployed user-accounts service not responding"
+                fi
+                ;;
+              catalog)
+                echo "Testing deployed catalog service..."
+                if curl -I -s --max-time 15 https://catalog.phshoesproject.com/system/status | head -1; then
+                  echo "✅ Deployed catalog service responding"
+                else
+                  echo "❌ Deployed catalog service not responding"
+                fi
+                ;;
+              alerts)
+                echo "Testing deployed alerts service..."
+                if curl -I -s --max-time 15 https://alerts.phshoesproject.com/system/status | head -1; then
+                  echo "✅ Deployed alerts service responding"
+                else
+                  echo "❌ Deployed alerts service not responding"
+                fi
+                ;;
+              text-search)
+                echo "Testing deployed text-search service..."
+                if curl -I -s --max-time 15 https://text-search.phshoesproject.com/system/status | head -1; then
+                  echo "✅ Deployed text-search service responding"
+                else
+                  echo "❌ Deployed text-search service not responding"
+                fi
+                ;;
+            esac
+            echo ""
+          fi
+          
+          # Test all services for comprehensive validation
+          echo "🔍 Testing all service endpoints..."
+          
           # Test frontend
           echo "Testing frontend..."
           if curl -I -s --max-time 10 https://phshoesproject.com | head -1; then
@@ -131,10 +184,27 @@ jobs:
           else
             echo "❌ Alerts not responding"
           fi
+          
+          # Test text-search
+          echo "Testing text-search..."
+          if curl -I -s --max-time 10 https://text-search.phshoesproject.com/system/status | head -1; then
+            echo "✅ Text-search responding"
+          else
+            echo "❌ Text-search not responding"
+          fi
 
-      - name: Trigger DNS Update on Other Repos
+      - name: Log deployment trigger information
         if: github.event_name == 'repository_dispatch'
         run: |
           echo "🔄 DNS update triggered by service deployment"
-          echo "Event: ${{ github.event.action }}"
+          echo "Event Type: ${{ github.event.action }}"
           echo "Service: ${{ github.event.client_payload.service_name || 'unknown' }}"
+          echo "Trigger: ${{ github.event.client_payload.trigger || 'unknown' }}"
+          echo "Deployment Timestamp: ${{ github.event.client_payload.deployment_timestamp || 'N/A' }}"
+          echo "Health Check Passed: ${{ github.event.client_payload.health_check_passed || 'N/A' }}"
+          echo "Image URI: ${{ github.event.client_payload.image_uri || 'N/A' }}"
+          echo "App Version: ${{ github.event.client_payload.app_version || 'N/A' }}"
+          echo "Triggered By: ${{ github.event.client_payload.triggered_by || 'N/A' }}"
+          echo "Workflow Run ID: ${{ github.event.client_payload.workflow_run_id || 'N/A' }}"
+          echo ""
+          echo "✅ DNS update will now refresh routing for the deployed service"

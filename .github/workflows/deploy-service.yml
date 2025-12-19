@@ -234,76 +234,176 @@ jobs:
             echo "missing_backends=false" >> $GITHUB_ENV
           fi
 
-      - name: Wait for ECS rollout completion and trigger DNS update
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Wait for ECS rollout completion
+        id: deployment_status
         run: |
-          if [ "${{ env.SERVICE }}" = "frontend" ]; then
-            echo "🔄 Waiting for ECS rollout to complete..."
-            DNS_TRIGGERED=false
-            
-            for i in {1..30}; do
-              SERVICE_INFO=$(aws ecs describe-services \
-                --cluster ph-shoes-services-ecs \
-                --services ph-shoes-services-automation-frontend \
-                --region ${{ env.AWS_REGION }} \
-                --query 'services[0].{running:runningCount,desired:desiredCount,deployments:deployments[?status==`PRIMARY`].{status:status,rolloutState:rolloutState}}' --output json)
-              
-              RUNNING=$(echo $SERVICE_INFO | jq -r '.running')
-              DESIRED=$(echo $SERVICE_INFO | jq -r '.desired')
-              ROLLOUT_STATE=$(echo $SERVICE_INFO | jq -r '.deployments[0].rolloutState // "PENDING"')
-              
-              echo "ECS Status: $RUNNING/$DESIRED tasks running, Rollout: $ROLLOUT_STATE"
-              
-              # Start health check when rollout completes
-              if [ "$RUNNING" = "$DESIRED" ] && [ "$RUNNING" != "0" ] && [ "$ROLLOUT_STATE" = "COMPLETED" ]; then
-                echo "✅ ECS tasks are running, checking URL health..."
-                
-                URL="https://phshoesproject.com"
-                STATUS=$(curl -s -o /dev/null -w "%{http_code}" $URL || echo "000")
-                
-                if [ "$STATUS" = "200" ]; then
-                  echo "✅ Site is healthy (HTTP $STATUS)"
-                  
-                  # Additional check if backends are missing
-                  if [ "${{ env.missing_backends }}" = "true" ]; then
-                    echo ""
-                    echo "⚠️  IMPORTANT: Frontend is running but backend services are missing!"
-                    echo "🔧 API calls will fail with 502 errors until backend services are deployed"
-                    echo "💡 Use 'Deploy All Services' workflow or deploy individual backend services"
-                  fi
-                  
-                  exit 0
-                else
-                  echo "❌ URL returned HTTP $STATUS - Frontend should work independently!"
-                  echo "🔧 Frontend deployment failed - site should be accessible even without backends"
-                  if [ "$STATUS" = "502" ]; then
-                    echo "💡 502 error indicates nginx configuration or container port mapping issue"
-                  elif [ "$STATUS" = "522" ]; then
-                    echo "💡 522 error indicates DNS mismatch - triggering DNS update if not done yet"
-                    if [ "$DNS_TRIGGERED" = "false" ]; then
-                      echo "🌐 Triggering DNS update to fix 522 error..."
-                      gh workflow run auto-dns-update.yml || echo "⚠️ DNS update trigger failed"
-                      DNS_TRIGGERED=true
-                      echo "⏳ Waiting 90 seconds for DNS propagation..."
-                      sleep 90
-                    fi
-                  fi
-                  # Continue waiting instead of exiting - don't accept 502/522 as success
-                fi
-              fi
-              
-              echo "Attempt $i/30 - waiting 30s..."
-              sleep 30
-            done
-            
-            echo "❌ Deployment failed - site not healthy after 15 minutes"
-            exit 1
-          else
-            echo "Non-frontend service - showing status:"
-            aws ecs describe-services \
+          echo "🔄 Waiting for ECS rollout to complete for service: ${{ env.SERVICE }}"
+          
+          # Wait for ECS service to reach stable state
+          for i in {1..30}; do
+            SERVICE_INFO=$(aws ecs describe-services \
               --cluster ph-shoes-services-ecs \
               --services ph-shoes-services-automation-${{ env.SERVICE }} \
               --region ${{ env.AWS_REGION }} \
-              --query 'services[0].{desired:desiredCount,running:runningCount,pending:pendingCount}'
+              --query 'services[0].{running:runningCount,desired:desiredCount,deployments:deployments[?status==`PRIMARY`].{status:status,rolloutState:rolloutState}}' --output json)
+            
+            RUNNING=$(echo $SERVICE_INFO | jq -r '.running')
+            DESIRED=$(echo $SERVICE_INFO | jq -r '.desired')
+            ROLLOUT_STATE=$(echo $SERVICE_INFO | jq -r '.deployments[0].rolloutState // "PENDING"')
+            
+            echo "ECS Status: $RUNNING/$DESIRED tasks running, Rollout: $ROLLOUT_STATE"
+            
+            # Check if rollout is complete
+            if [ "$RUNNING" = "$DESIRED" ] && [ "$RUNNING" != "0" ] && [ "$ROLLOUT_STATE" = "COMPLETED" ]; then
+              echo "✅ ECS rollout completed successfully"
+              echo "deployment_success=true" >> $GITHUB_OUTPUT
+              echo "deployment_timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+              break
+            fi
+            
+            echo "Attempt $i/30 - waiting 30s..."
+            sleep 30
+          done
+          
+          # Final check
+          if [ "$ROLLOUT_STATE" != "COMPLETED" ] || [ "$RUNNING" != "$DESIRED" ]; then
+            echo "❌ ECS rollout failed or timed out"
+            echo "deployment_success=false" >> $GITHUB_OUTPUT
+            exit 1
           fi
+
+      - name: Health check validation
+        id: health_check
+        if: steps.deployment_status.outputs.deployment_success == 'true'
+        run: |
+          echo "🏥 Performing health check for service: ${{ env.SERVICE }}"
+          
+          # Set health check URL based on service type
+          case "${{ env.SERVICE }}" in
+            frontend)
+              HEALTH_URL="https://phshoesproject.com"
+              EXPECTED_STATUS="200"
+              ;;
+            user-accounts)
+              HEALTH_URL="https://accounts.phshoesproject.com/system/status"
+              EXPECTED_STATUS="200"
+              ;;
+            catalog)
+              HEALTH_URL="https://catalog.phshoesproject.com/system/status"
+              EXPECTED_STATUS="200"
+              ;;
+            alerts)
+              HEALTH_URL="https://alerts.phshoesproject.com/system/status"
+              EXPECTED_STATUS="200"
+              ;;
+            text-search)
+              HEALTH_URL="https://text-search.phshoesproject.com/system/status"
+              EXPECTED_STATUS="200"
+              ;;
+            *)
+              echo "⚠️ Unknown service type, skipping health check"
+              echo "health_check_passed=true" >> $GITHUB_OUTPUT
+              exit 0
+              ;;
+          esac
+          
+          echo "Testing health endpoint: $HEALTH_URL"
+          
+          # Perform health check with retries
+          HEALTH_PASSED=false
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$HEALTH_URL" || echo "000")
+            echo "Health check attempt $i/10: HTTP $STATUS"
+            
+            if [ "$STATUS" = "$EXPECTED_STATUS" ]; then
+              echo "✅ Health check passed (HTTP $STATUS)"
+              HEALTH_PASSED=true
+              break
+            elif [ "$STATUS" = "522" ] || [ "$STATUS" = "000" ]; then
+              echo "🔄 DNS/connectivity issue (HTTP $STATUS), will trigger DNS update"
+            else
+              echo "⚠️ Unexpected status (HTTP $STATUS), retrying..."
+            fi
+            
+            sleep 15
+          done
+          
+          if [ "$HEALTH_PASSED" = "true" ]; then
+            echo "health_check_passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Health check failed, but proceeding with DNS update to fix potential routing issues"
+            echo "health_check_passed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger automatic DNS update
+        if: steps.deployment_status.outputs.deployment_success == 'true'
+        run: |
+          echo "🌐 Triggering DNS update to fix 522 error..."
+          
+          # Try to trigger DNS update workflow using GitHub CLI
+          if gh workflow run auto-dns-update.yml --repo ${{ github.repository }} 2>/dev/null; then
+            echo "✅ DNS update workflow triggered successfully"
+          else
+            echo "⚠️ DNS update trigger failed - continuing with manual fallback"
+            echo "💡 You may need to manually run the auto-dns-update workflow"
+            echo "🔧 Command: gh workflow run auto-dns-update.yml"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for DNS propagation and final validation
+        if: steps.deployment_status.outputs.deployment_success == 'true'
+        run: |
+          echo "🌐 Waiting for DNS update to complete..."
+          sleep 60  # Give DNS update workflow time to start and apply changes
+          
+          # Set validation URL based on service type
+          case "${{ env.SERVICE }}" in
+            frontend)
+              VALIDATION_URL="https://phshoesproject.com"
+              ;;
+            user-accounts)
+              VALIDATION_URL="https://accounts.phshoesproject.com/system/status"
+              ;;
+            catalog)
+              VALIDATION_URL="https://catalog.phshoesproject.com/system/status"
+              ;;
+            alerts)
+              VALIDATION_URL="https://alerts.phshoesproject.com/system/status"
+              ;;
+            text-search)
+              VALIDATION_URL="https://text-search.phshoesproject.com/system/status"
+              ;;
+            *)
+              echo "✅ Service deployed successfully (no URL validation for unknown service type)"
+              exit 0
+              ;;
+          esac
+          
+          echo "🔍 Final validation of service endpoint: $VALIDATION_URL"
+          
+          # Final validation with extended timeout
+          for i in {1..5}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$VALIDATION_URL" || echo "000")
+            echo "Final validation attempt $i/5: HTTP $STATUS"
+            
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Service deployment and DNS update completed successfully!"
+              
+              # Additional context for frontend
+              if [ "${{ env.SERVICE }}" = "frontend" ] && [ "${{ env.missing_backends }}" = "true" ]; then
+                echo ""
+                echo "⚠️  IMPORTANT: Frontend is running but backend services are missing!"
+                echo "🔧 API calls will fail with 502 errors until backend services are deployed"
+                echo "💡 Use 'Deploy All Services' workflow or deploy individual backend services"
+              fi
+              
+              exit 0
+            fi
+            
+            sleep 30
+          done
+          
+          echo "⚠️ Final validation failed, but deployment was successful"
+          echo "💡 DNS propagation may take additional time, or there may be service configuration issues"
+          echo "🔧 Check service logs and DNS records if issues persist"

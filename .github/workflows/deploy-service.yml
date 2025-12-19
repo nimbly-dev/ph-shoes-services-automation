@@ -272,11 +272,36 @@ jobs:
             exit 1
           fi
 
+      - name: Trigger automatic DNS update
+        if: steps.deployment_status.outputs.deployment_success == 'true'
+        run: |
+          echo "🌐 Triggering DNS update immediately after deployment..."
+          echo "💡 DNS must be updated before health checks to avoid 522 errors"
+          
+          # Try to trigger DNS update workflow using GitHub CLI
+          if gh workflow run auto-dns-update.yml --repo ${{ github.repository }} 2>/dev/null; then
+            echo "✅ DNS update workflow triggered successfully"
+          else
+            echo "⚠️ DNS update trigger failed - continuing with manual fallback"
+            echo "💡 You may need to manually run the auto-dns-update workflow"
+            echo "🔧 Command: gh workflow run auto-dns-update.yml"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for DNS propagation
+        if: steps.deployment_status.outputs.deployment_success == 'true'
+        run: |
+          echo "⏳ Waiting for DNS update to complete and propagate..."
+          echo "🔄 This ensures health checks hit the correct instance"
+          sleep 90  # Give DNS update workflow time to complete and propagate
+
       - name: Health check validation
         id: health_check
         if: steps.deployment_status.outputs.deployment_success == 'true'
         run: |
           echo "🏥 Performing health check for service: ${{ env.SERVICE }}"
+          echo "✅ DNS should now point to the correct instance"
           
           # Set health check URL based on service type
           case "${{ env.SERVICE }}" in
@@ -285,19 +310,19 @@ jobs:
               EXPECTED_STATUS="200"
               ;;
             user-accounts)
-              HEALTH_URL="https://accounts.phshoesproject.com/system/status"
+              HEALTH_URL="https://accounts.phshoesproject.com/api/v1/system/status"
               EXPECTED_STATUS="200"
               ;;
             catalog)
-              HEALTH_URL="https://catalog.phshoesproject.com/system/status"
+              HEALTH_URL="https://catalog.phshoesproject.com/api/v1/system/status"
               EXPECTED_STATUS="200"
               ;;
             alerts)
-              HEALTH_URL="https://alerts.phshoesproject.com/system/status"
+              HEALTH_URL="https://alerts.phshoesproject.com/api/v1/system/status"
               EXPECTED_STATUS="200"
               ;;
             text-search)
-              HEALTH_URL="https://text-search.phshoesproject.com/system/status"
+              HEALTH_URL="https://text-search.phshoesproject.com/api/v1/system/status"
               EXPECTED_STATUS="200"
               ;;
             *)
@@ -319,8 +344,10 @@ jobs:
               echo "✅ Health check passed (HTTP $STATUS)"
               HEALTH_PASSED=true
               break
-            elif [ "$STATUS" = "522" ] || [ "$STATUS" = "000" ]; then
-              echo "🔄 DNS/connectivity issue (HTTP $STATUS), will trigger DNS update"
+            elif [ "$STATUS" = "522" ]; then
+              echo "🚨 Still getting 522 error - DNS may need more time to propagate"
+            elif [ "$STATUS" = "000" ]; then
+              echo "🔄 Connection timeout - service may still be starting"
             else
               echo "⚠️ Unexpected status (HTTP $STATUS), retrying..."
             fi
@@ -331,79 +358,36 @@ jobs:
           if [ "$HEALTH_PASSED" = "true" ]; then
             echo "health_check_passed=true" >> $GITHUB_OUTPUT
           else
-            echo "⚠️ Health check failed, but proceeding with DNS update to fix potential routing issues"
+            echo "❌ Health check failed after DNS update"
+            echo "🔧 This may indicate a service issue rather than DNS routing"
             echo "health_check_passed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Trigger automatic DNS update
+      - name: Deployment summary
         if: steps.deployment_status.outputs.deployment_success == 'true'
         run: |
-          echo "🌐 Triggering DNS update to fix 522 error..."
+          echo "📋 Deployment Summary"
+          echo "===================="
+          echo "Service: ${{ env.SERVICE }}"
+          echo "Image: ${{ env.IMAGE_URI }}"
+          echo "Version: ${{ env.APP_VERSION }}"
+          echo "Health Check: ${{ steps.health_check.outputs.health_check_passed }}"
+          echo ""
           
-          # Try to trigger DNS update workflow using GitHub CLI
-          if gh workflow run auto-dns-update.yml --repo ${{ github.repository }} 2>/dev/null; then
-            echo "✅ DNS update workflow triggered successfully"
+          if [ "${{ steps.health_check.outputs.health_check_passed }}" = "true" ]; then
+            echo "✅ Service deployment completed successfully!"
+            echo "🌐 DNS updated and health checks passed"
           else
-            echo "⚠️ DNS update trigger failed - continuing with manual fallback"
-            echo "💡 You may need to manually run the auto-dns-update workflow"
-            echo "🔧 Command: gh workflow run auto-dns-update.yml"
+            echo "⚠️ Service deployed but health checks failed"
+            echo "🔧 This may indicate a service configuration issue"
+            echo "💡 Check ECS logs and service status"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Wait for DNS propagation and final validation
-        if: steps.deployment_status.outputs.deployment_success == 'true'
-        run: |
-          echo "🌐 Waiting for DNS update to complete..."
-          sleep 60  # Give DNS update workflow time to start and apply changes
           
-          # Set validation URL based on service type
-          case "${{ env.SERVICE }}" in
-            frontend)
-              VALIDATION_URL="https://phshoesproject.com"
-              ;;
-            user-accounts)
-              VALIDATION_URL="https://accounts.phshoesproject.com/system/status"
-              ;;
-            catalog)
-              VALIDATION_URL="https://catalog.phshoesproject.com/system/status"
-              ;;
-            alerts)
-              VALIDATION_URL="https://alerts.phshoesproject.com/system/status"
-              ;;
-            text-search)
-              VALIDATION_URL="https://text-search.phshoesproject.com/system/status"
-              ;;
-            *)
-              echo "✅ Service deployed successfully (no URL validation for unknown service type)"
-              exit 0
-              ;;
-          esac
-          
-          echo "🔍 Final validation of service endpoint: $VALIDATION_URL"
-          
-          # Final validation with extended timeout
-          for i in {1..5}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$VALIDATION_URL" || echo "000")
-            echo "Final validation attempt $i/5: HTTP $STATUS"
-            
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ Service deployment and DNS update completed successfully!"
-              
-              # Additional context for frontend
-              if [ "${{ env.SERVICE }}" = "frontend" ] && [ "${{ env.missing_backends }}" = "true" ]; then
-                echo ""
-                echo "⚠️  IMPORTANT: Frontend is running but backend services are missing!"
-                echo "🔧 API calls will fail with 502 errors until backend services are deployed"
-                echo "💡 Use 'Deploy All Services' workflow or deploy individual backend services"
-              fi
-              
-              exit 0
-            fi
-            
-            sleep 30
-          done
-          
-          echo "⚠️ Final validation failed, but deployment was successful"
-          echo "💡 DNS propagation may take additional time, or there may be service configuration issues"
+          # Additional context for frontend
+          if [ "${{ env.SERVICE }}" = "frontend" ] && [ "${{ env.missing_backends }}" = "true" ]; then
+            echo ""
+            echo "⚠️  IMPORTANT: Frontend is running but backend services are missing!"
+            echo "🔧 API calls will fail with 502 errors until backend services are deployed"
+            echo "💡 Use 'Deploy All Services' workflow or deploy individual backend services"
+          fi
           echo "🔧 Check service logs and DNS records if issues persist"

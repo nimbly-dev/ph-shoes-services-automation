@@ -1,10 +1,12 @@
 # Cloudflare DNS records with dynamic service-aware routing
 # Uses the dynamic-dns module for service discovery and routing
 
-# Get all EC2 instance IPs for fallback
+# Get all EC2 instance IPs for fallback with proper handling for scaled-to-zero scenario
 locals {
-  instance_ips = length(data.aws_instances.ecs_instances.public_ips) > 0 ? data.aws_instances.ecs_instances.public_ips : ["127.0.0.1"]
-  fallback_ip  = length(local.instance_ips) > 0 ? local.instance_ips[0] : "127.0.0.1"
+  instance_ips = data.aws_instances.ecs_instances.public_ips
+  # When scaled to zero, use a maintenance page IP or parking page
+  # This prevents DNS resolution failures when all instances are terminated
+  fallback_ip = length(local.instance_ips) > 0 ? local.instance_ips[0] : "192.0.2.1" # RFC 5737 documentation IP
 }
 
 # Dynamic DNS module for deployed services
@@ -73,4 +75,14 @@ output "cloudflare_dns_records" {
 output "service_instance_ips" {
   value       = var.use_cloudflare_dns ? module.dynamic_dns[0].service_ips : {}
   description = "Discovered IP addresses for each service"
+}
+
+output "service_discovery_debug" {
+  value       = var.use_cloudflare_dns ? module.dynamic_dns[0].service_discovery_details : {}
+  description = "Detailed service discovery information including task ARNs, container instances, and EC2 IPs"
+}
+
+output "service_routing_summary" {
+  value       = var.use_cloudflare_dns ? module.dynamic_dns[0].service_to_ip_mapping : {}
+  description = "Summary of service-to-IP mappings for DNS routing validation"
 }

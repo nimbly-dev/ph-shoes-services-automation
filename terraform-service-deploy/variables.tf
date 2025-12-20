@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Project prefix"
   type        = string
-  default     = "ph-shoes-application-services"
+  default     = "ph-shoes-services"
 }
 
 variable "service_id" {
@@ -19,13 +19,13 @@ variable "service_id" {
 variable "service_name" {
   description = "ECS service name"
   type        = string
-  default     = "ph-shoes-application-services-frontend"
+  default     = "ph-shoes-services-automation-frontend"
 }
 
 variable "cluster_name" {
   description = "ECS cluster name"
   type        = string
-  default     = "ph-shoes-application-services-ecs"
+  default     = "ph-shoes-services-ecs"
 }
 
 variable "container_image" {
@@ -103,7 +103,7 @@ variable "extra_tags" {
 variable "capacity_provider_name" {
   description = "ECS capacity provider name"
   type        = string
-  default     = "ph-shoes-application-services-ecs-cp"
+  default     = "ph-shoes-services-ecs-cp"
 }
 
 variable "log_retention_days" {

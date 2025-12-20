@@ -33,5 +33,5 @@ output "query_definition_names" {
 
 output "composite_alarm_names" {
   description = "List of composite alarm names - removed for cost optimization"
-  value = []
+  value       = []
 }

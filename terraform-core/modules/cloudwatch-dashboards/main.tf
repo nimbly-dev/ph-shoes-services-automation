@@ -287,7 +287,7 @@ resource "aws_cloudwatch_query_definition" "essential_errors" {
 
   log_group_names = [
     "/backend/user-accounts",
-    "/backend/catalog", 
+    "/backend/catalog",
     "/backend/alerts",
     "/backend/text-search",
     "/frontend"

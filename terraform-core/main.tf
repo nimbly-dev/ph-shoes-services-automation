@@ -127,6 +127,16 @@ resource "aws_security_group_rule" "frontend_http" {
   security_group_id = module.ecs_cluster.instance_security_group_id
 }
 
+# Backend service ports (8081-8084)
+resource "aws_security_group_rule" "backend_services" {
+  type              = "ingress"
+  from_port         = 8081
+  to_port           = 8084
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = module.ecs_cluster.instance_security_group_id
+}
+
 # DNS management moved to separate terraform-dns module
 
 # CloudWatch Monitoring

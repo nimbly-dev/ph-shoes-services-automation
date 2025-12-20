@@ -78,7 +78,7 @@ resource "aws_iam_role_policy" "task_dynamodb" {
       ]
       Resource = [
         "arn:aws:dynamodb:*:*:table/accounts",
-        "arn:aws:dynamodb:*:*:table/login_sessions", 
+        "arn:aws:dynamodb:*:*:table/login_sessions",
         "arn:aws:dynamodb:*:*:table/account_verifications",
         "arn:aws:dynamodb:*:*:table/email_suppressions",
         "arn:aws:dynamodb:*:*:table/alerts",

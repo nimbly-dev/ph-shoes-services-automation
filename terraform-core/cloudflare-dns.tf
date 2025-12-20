@@ -14,29 +14,29 @@ module "dynamic_dns" {
   source = "./modules/dynamic-dns"
   count  = var.use_cloudflare_dns ? 1 : 0
 
-  cluster_name        = "ph-shoes-services-ecs"
-  aws_region          = "ap-southeast-1"
-  cloudflare_zone_id  = var.cloudflare_zone_id
-  fallback_ip         = local.fallback_ip
+  cluster_name       = "ph-shoes-application-services-ecs"
+  aws_region         = "ap-southeast-1"
+  cloudflare_zone_id = var.cloudflare_zone_id
+  fallback_ip        = local.fallback_ip
 
   services = {
     frontend = {
-      service_name = "ph-shoes-services-automation-frontend"
+      service_name = "ph-shoes-application-services-frontend"
       domain       = "phshoesproject.com"
       description  = "Frontend SPA"
     }
     catalog = {
-      service_name = "ph-shoes-services-automation-catalog"
+      service_name = "ph-shoes-application-services-catalog"
       domain       = "catalog"
       description  = "Catalog service"
     }
     alerts = {
-      service_name = "ph-shoes-services-automation-alerts"
+      service_name = "ph-shoes-application-services-alerts"
       domain       = "alerts"
       description  = "Alerts service"
     }
     user_accounts = {
-      service_name = "ph-shoes-services-automation-user-accounts"
+      service_name = "ph-shoes-application-services-user-accounts"
       domain       = "accounts"
       description  = "User accounts service"
     }

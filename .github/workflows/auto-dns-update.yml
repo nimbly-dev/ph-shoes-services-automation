@@ -41,12 +41,12 @@ jobs:
         run: |
           echo "🔍 Checking ECS service status..."
           aws ecs describe-services \
-            --cluster ph-shoes-services-ecs \
+            --cluster ph-shoes-application-services-ecs \
             --services \
-              ph-shoes-services-automation-frontend \
-              ph-shoes-services-automation-catalog \
-              ph-shoes-services-automation-user-accounts \
-              ph-shoes-services-automation-alerts \
+              ph-shoes-application-services-frontend \
+              ph-shoes-application-services-catalog \
+              ph-shoes-application-services-user-accounts \
+              ph-shoes-application-services-alerts \
             --query "services[*].{Name:serviceName,Running:runningCount,Desired:desiredCount}" \
             --output table
 
@@ -55,19 +55,19 @@ jobs:
           echo "📍 Current instance distribution:"
           
           # Get tasks and their instances
-          TASKS=$(aws ecs list-tasks --cluster ph-shoes-services-ecs --query "taskArns[*]" --output text)
+          TASKS=$(aws ecs list-tasks --cluster ph-shoes-application-services-ecs --query "taskArns[*]" --output text)
           if [ -n "$TASKS" ]; then
             aws ecs describe-tasks \
-              --cluster ph-shoes-services-ecs \
+              --cluster ph-shoes-application-services-ecs \
               --tasks $TASKS \
               --query "tasks[*].{Service:group,Instance:containerInstanceArn}" \
               --output table
             
             # Get container instances and their IPs
-            CONTAINER_INSTANCES=$(aws ecs list-container-instances --cluster ph-shoes-services-ecs --query "containerInstanceArns[*]" --output text)
+            CONTAINER_INSTANCES=$(aws ecs list-container-instances --cluster ph-shoes-application-services-ecs --query "containerInstanceArns[*]" --output text)
             if [ -n "$CONTAINER_INSTANCES" ]; then
               EC2_INSTANCES=$(aws ecs describe-container-instances \
-                --cluster ph-shoes-services-ecs \
+                --cluster ph-shoes-application-services-ecs \
                 --container-instances $CONTAINER_INSTANCES \
                 --query "containerInstances[*].ec2InstanceId" \
                 --output text)

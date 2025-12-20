@@ -7,7 +7,7 @@ locals {
   ]
 
   has_custom_ingress = length(var.ingress_rules) > 0
-  default_ingress    = local.has_custom_ingress ? [] : [
+  default_ingress = local.has_custom_ingress ? [] : [
     {
       from_port   = var.container_port
       to_port     = var.container_port
@@ -21,9 +21,12 @@ locals {
 
 resource "aws_cloudwatch_log_group" "service" {
   count             = var.log_group_name == "" ? 1 : 0
-  name              = "/ecs/${var.service_name}"
+  name              = local.default_log_group_name
   retention_in_days = var.log_retention_in_days
-  tags              = var.tags
+  tags              = merge(var.tags, {
+    ServiceName = var.service_name
+    ServiceType = var.service_type
+  })
 }
 
 resource "aws_security_group" "service" {
@@ -47,7 +50,11 @@ resource "aws_security_group" "service" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  tags = merge(var.tags, { Name = "${var.service_name}-sg" })
+  tags = merge(var.tags, {
+    Name        = "${var.service_name}-sg"
+    ServiceName = var.service_name
+    ServiceType = var.service_type
+  })
 }
 
 resource "aws_iam_role" "execution" {
@@ -57,12 +64,15 @@ resource "aws_iam_role" "execution" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
       Principal = { Service = "ecs-tasks.amazonaws.com" }
     }]
   })
-  tags = var.tags
+  tags = merge(var.tags, {
+    ServiceName = var.service_name
+    ServiceType = var.service_type
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "execution" {
@@ -78,12 +88,15 @@ resource "aws_iam_role" "task" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
       Principal = { Service = "ecs-tasks.amazonaws.com" }
     }]
   })
-  tags = var.tags
+  tags = merge(var.tags, {
+    ServiceName = var.service_name
+    ServiceType = var.service_type
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "task_managed" {
@@ -137,7 +150,11 @@ resource "aws_ecs_task_definition" "this" {
 }
 
 locals {
-  log_group_name    = var.log_group_name != "" ? var.log_group_name : aws_cloudwatch_log_group.service[0].name
+  # Determine log group naming convention based on service type
+  is_frontend_service    = var.service_type == "frontend"
+  default_log_group_name = local.is_frontend_service ? "/frontend" : "/backend/${var.service_name}"
+
+  log_group_name     = var.log_group_name != "" ? var.log_group_name : aws_cloudwatch_log_group.service[0].name
   execution_role_arn = var.execution_role_arn != "" ? var.execution_role_arn : aws_iam_role.execution[0].arn
   task_role_arn      = var.task_role_arn != "" ? var.task_role_arn : aws_iam_role.task[0].arn
   assign_public_ip   = var.launch_type == "FARGATE" ? var.assign_public_ip : false
@@ -173,5 +190,8 @@ resource "aws_ecs_service" "this" {
     ignore_changes = [desired_count]
   }
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    ServiceName = var.service_name
+    ServiceType = var.service_type
+  })
 }

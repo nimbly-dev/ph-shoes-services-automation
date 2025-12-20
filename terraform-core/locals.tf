@@ -1,9 +1,13 @@
 locals {
   common_tags = merge({
-    Project     = var.project_name
-    Environment = var.environment
-    Application = var.app_name
-    ManagedBy   = "terraform"
-    Owner       = var.owner
+    Application  = var.application_name
+    Project      = "ph-shoes"
+    Environment  = "beta"
+    Stage        = "development"
+    Owner        = "nimbly-dev"
+    CostCenter   = "development"
+    BillingGroup = "ph-shoes-services-automation"
+    Tier         = "free"
+    ManagedBy    = "terraform"
   }, var.extra_tags)
 }

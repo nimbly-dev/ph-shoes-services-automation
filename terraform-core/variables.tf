@@ -13,13 +13,13 @@ variable "environment" {
 variable "app_name" {
   description = "Logical application or service name"
   type        = string
-  default     = "ph-shoes-services"
+  default     = "ph-shoes-application-services"
 }
 
 variable "project_name" {
   description = "Project tag used across the stack"
   type        = string
-  default     = "ph-shoes-services-automation"
+  default     = "ph-shoes-application-services"
 }
 
 variable "application_name" {
@@ -65,7 +65,7 @@ variable "backend_web_modules" {
 
 variable "additional_ecr_repositories" {
   description = "Optional extra repository definitions appended to the defaults"
-  type        = list(object({
+  type = list(object({
     name        = string
     description = optional(string)
   }))
@@ -81,7 +81,7 @@ variable "github_owner" {
 variable "github_repositories" {
   description = "List of GitHub repositories allowed to assume the deployment role"
   type        = list(string)
-  default     = [
+  default = [
     "ph-shoes-services-automation",
     "ph-shoes-data-spa",
     "ph-shoes-catalog-service",
@@ -185,7 +185,7 @@ variable "availability_zones" {
 variable "ecs_cluster_name" {
   description = "Name of the shared ECS cluster"
   type        = string
-  default     = "ph-shoes-services-ecs"
+  default     = "ph-shoes-application-services-ecs"
 }
 
 variable "ecs_instance_type" {
@@ -275,6 +275,57 @@ variable "use_cloudflare_dns" {
   description = "Use Cloudflare for DNS management instead of Route53"
   type        = bool
   default     = false
+}
+
+# CloudWatch Monitoring variables
+variable "enable_cloudwatch_monitoring" {
+  description = "Enable CloudWatch monitoring and alarms for ECS services"
+  type        = bool
+  default     = true
+}
+
+variable "cloudwatch_cpu_threshold" {
+  description = "CPU utilization threshold percentage for CloudWatch alarms"
+  type        = number
+  default     = 80
+}
+
+variable "cloudwatch_memory_threshold" {
+  description = "Memory utilization threshold percentage for CloudWatch alarms"
+  type        = number
+  default     = 80
+}
+
+variable "cloudwatch_alarm_email" {
+  description = "Email address for CloudWatch alarm notifications (optional)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "monitored_services" {
+  description = "List of ECS service names to monitor with CloudWatch alarms"
+  type        = list(string)
+  default = [
+    "ph-shoes-alerts-service-web",
+    "ph-shoes-catalog-service-web",
+    "ph-shoes-text-search-service-web",
+    "ph-shoes-user-accounts-service-web",
+    "ph-shoes-data-spa-frontend"
+  ]
+}
+
+# CloudWatch Dashboards variables (Task 12.2)
+variable "enable_cloudwatch_dashboards" {
+  description = "Enable comprehensive CloudWatch dashboards for system monitoring"
+  type        = bool
+  default     = true
+}
+
+variable "enable_cost_tracking" {
+  description = "Enable cost tracking widgets in CloudWatch dashboards"
+  type        = bool
+  default     = true
 }
 
 

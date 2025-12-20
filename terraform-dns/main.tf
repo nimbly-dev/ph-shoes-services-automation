@@ -36,32 +36,31 @@ resource "aws_route53_record" "subdomains" {
   records = length(data.aws_instances.ecs_instances.public_ips) > 0 ? [data.aws_instances.ecs_instances.public_ips[0]] : ["127.0.0.1"]
 }
 
-# Cloudflare DNS records with proxy enabled for service routing
-# Root domain A record - proxied for free SSL and DDoS protection
+# Cloudflare DNS records with selective proxy configuration
+# Root domain A record - proxied for free SSL and DDoS protection (frontend)
 resource "cloudflare_record" "frontend" {
   count           = var.use_cloudflare_dns ? 1 : 0
   zone_id         = var.cloudflare_zone_id
   name            = "@"  # @ represents the root domain
   type            = "A"
   content         = length(data.aws_instances.ecs_instances.public_ips) > 0 ? data.aws_instances.ecs_instances.public_ips[0] : "127.0.0.1"
-  ttl             = 1     # TTL must be 1 when proxied=true (automatic)
-  proxied         = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
-  comment         = "Service routing - managed by terraform-dns workflow"
-  allow_overwrite = true  # Allow replacing existing conflicting records
+  ttl             = 300   # Use standard TTL for non-proxied or set to 1 for proxied
+  proxied         = true  # Enable proxy for frontend (SSL, DDoS protection)
+  comment         = "Frontend service routing - managed by terraform-dns workflow"
+  allow_overwrite = true
 }
 
-# Subdomain A records (matching existing structure) - proxied for consistent behavior
-# Using A records instead of CNAME to match existing Cloudflare configuration
-# Note: DKIM records (._domainkey) are managed manually and should not be modified
-resource "cloudflare_record" "subdomains" {
-  for_each = var.use_cloudflare_dns ? toset(var.subdomain_services) : toset([])
+# Backend API subdomain A records - DNS only (no proxy) to avoid 502 errors
+# Spring Boot services work better with direct connections
+resource "cloudflare_record" "backend_services" {
+  for_each = var.use_cloudflare_dns ? toset(["accounts", "catalog", "alerts", "text-search"]) : toset([])
   
   zone_id         = var.cloudflare_zone_id
   name            = each.key
-  type            = "A"  # Using A records to match existing structure
+  type            = "A"
   content         = length(data.aws_instances.ecs_instances.public_ips) > 0 ? data.aws_instances.ecs_instances.public_ips[0] : "127.0.0.1"
-  ttl             = 1     # TTL must be 1 when proxied=true (automatic)
-  proxied         = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
-  comment         = "Service routing - managed by terraform-dns workflow"
-  allow_overwrite = true  # Allow replacing existing conflicting records
+  ttl             = 300   # Standard TTL for DNS-only records
+  proxied         = false # Disable proxy for backend APIs to avoid 502 errors
+  comment         = "Backend API service routing - DNS only to avoid proxy issues"
+  allow_overwrite = true
 }

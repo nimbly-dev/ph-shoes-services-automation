@@ -137,15 +137,7 @@ resource "aws_security_group_rule" "backend_services" {
   security_group_id = module.ecs_cluster.instance_security_group_id
 }
 
-# Nginx reverse proxy port (80) - for Cloudflare proxy integration
-resource "aws_security_group_rule" "nginx_proxy" {
-  type              = "ingress"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = module.ecs_cluster.instance_security_group_id
-}
+# Note: Port 80 (nginx proxy) security group rule already exists in the ECS cluster module
 
 # DNS management moved to separate terraform-dns module
 

@@ -1,14 +1,27 @@
 name: Auto DNS Update
 
 on:
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'DNS action to perform'
+        required: true
+        type: choice
+        options: ['plan', 'apply', 'destroy']
+        default: 'apply'
+      dns_provider:
+        description: 'DNS provider to use'
+        required: true
+        type: choice
+        options: ['cloudflare', 'route53']
+        default: 'cloudflare'
   repository_dispatch: # Allow triggering from other repositories
     types: [service-deployed, dns-update-needed, dns-update-required]
   schedule:
     - cron: '0 6 * * *' # Run daily at 6 AM UTC (2 PM Singapore time) to catch IP changes
 
 jobs:
-  update-dns:
+  dns-update:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -29,13 +42,20 @@ jobs:
         with:
           terraform_version: 1.7.0
 
-      - name: Validate Cloudflare credentials
+      - name: Validate DNS provider configuration
         run: |
-          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.CLOUDFLARE_ZONE_ID }}" ]; then
-            echo "❌ Missing Cloudflare credentials"
-            exit 1
+          DNS_PROVIDER="${{ github.event.inputs.dns_provider || 'cloudflare' }}"
+          echo "🔍 Validating DNS provider: $DNS_PROVIDER"
+          
+          if [ "$DNS_PROVIDER" = "cloudflare" ]; then
+            if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.CLOUDFLARE_ZONE_ID }}" ]; then
+              echo "❌ Missing Cloudflare credentials for Cloudflare DNS"
+              exit 1
+            fi
+            echo "✅ Cloudflare credentials configured"
+          else
+            echo "✅ Using Route53 DNS (AWS credentials already configured)"
           fi
-          echo "✅ Cloudflare credentials configured"
 
       - name: Check ECS Service Status
         run: |
@@ -55,106 +75,110 @@ jobs:
         run: |
           echo "📍 Current instance distribution:"
           
-          # Get tasks and their instances
-          TASKS=$(aws ecs list-tasks --cluster ph-shoes-services-ecs --query "taskArns[*]" --output text)
-          if [ -n "$TASKS" ]; then
-            aws ecs describe-tasks \
+          # Get container instances and their IPs
+          CONTAINER_INSTANCES=$(aws ecs list-container-instances --cluster ph-shoes-services-ecs --query "containerInstanceArns[*]" --output text)
+          if [ -n "$CONTAINER_INSTANCES" ]; then
+            EC2_INSTANCES=$(aws ecs describe-container-instances \
               --cluster ph-shoes-services-ecs \
-              --tasks $TASKS \
-              --query "tasks[*].{Service:group,Instance:containerInstanceArn}" \
-              --output table
+              --container-instances $CONTAINER_INSTANCES \
+              --query "containerInstances[*].ec2InstanceId" \
+              --output text)
             
-            # Get container instances and their IPs
-            CONTAINER_INSTANCES=$(aws ecs list-container-instances --cluster ph-shoes-services-ecs --query "containerInstanceArns[*]" --output text)
-            if [ -n "$CONTAINER_INSTANCES" ]; then
-              EC2_INSTANCES=$(aws ecs describe-container-instances \
-                --cluster ph-shoes-services-ecs \
-                --container-instances $CONTAINER_INSTANCES \
-                --query "containerInstances[*].ec2InstanceId" \
-                --output text)
-              
-              echo "🖥️  Instance IPs:"
-              aws ec2 describe-instances \
-                --instance-ids $EC2_INSTANCES \
-                --query "Reservations[*].Instances[*].{InstanceId:InstanceId,PublicIP:PublicIpAddress,State:State.Name}" \
-                --output table
-            fi
+            echo "🖥️  Instance IPs:"
+            aws ec2 describe-instances \
+              --instance-ids $EC2_INSTANCES \
+              --query "Reservations[*].Instances[*].{InstanceId:InstanceId,PublicIP:PublicIpAddress,State:State.Name}" \
+              --output table
           else
-            echo "❌ No tasks found - services may be scaled down"
+            echo "❌ No container instances found - ECS cluster may be scaled down"
           fi
 
-      - name: Apply DNS updates
-        working-directory: terraform-core
+      - name: Terraform Init
+        working-directory: terraform-dns
+        run: |
+          echo "🔧 Initializing Terraform..."
+          terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform-dns
         env:
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_use_cloudflare_dns: ${{ github.event.inputs.dns_provider == 'cloudflare' || github.event.inputs.dns_provider == '' }}
         run: |
-          terraform init -upgrade
-          echo "🚀 Applying DNS updates..."
-          terraform apply -auto-approve
-          echo "✅ DNS updates completed"
+          echo "📋 Planning DNS changes..."
+          terraform plan -detailed-exitcode
+          PLAN_EXIT_CODE=$?
+          
+          if [ $PLAN_EXIT_CODE -eq 0 ]; then
+            echo "✅ No changes needed"
+          elif [ $PLAN_EXIT_CODE -eq 2 ]; then
+            echo "📝 Changes detected and planned"
+          else
+            echo "❌ Terraform plan failed"
+            exit $PLAN_EXIT_CODE
+          fi
 
-      - name: Test Service Endpoints
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply' || github.event.inputs.action == '' || github.event_name == 'repository_dispatch' || github.event_name == 'schedule'
+        working-directory: terraform-dns
+        env:
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_use_cloudflare_dns: ${{ github.event.inputs.dns_provider == 'cloudflare' || github.event.inputs.dns_provider == '' }}
         run: |
-          echo "🌐 Testing service endpoints after DNS update..."
+          echo "🚀 Applying DNS changes..."
+          terraform apply -auto-approve
+          echo "✅ DNS changes applied successfully"
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        working-directory: terraform-dns
+        env:
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_use_cloudflare_dns: ${{ github.event.inputs.dns_provider == 'cloudflare' || github.event.inputs.dns_provider == '' }}
+        run: |
+          echo "🗑️  Destroying DNS records..."
+          terraform destroy -auto-approve
+          echo "✅ DNS records destroyed"
+
+      - name: Test DNS Resolution
+        if: github.event.inputs.action == 'apply' || github.event.inputs.action == '' || github.event_name == 'repository_dispatch' || github.event_name == 'schedule'
+        run: |
+          echo "🌐 Testing DNS resolution after changes..."
           
-          # Wait a moment for DNS propagation
-          sleep 10
+          # Wait for DNS propagation
+          echo "⏳ Waiting 30 seconds for DNS propagation..."
+          sleep 30
           
-          # If triggered by deployment, prioritize testing the deployed service
-          DEPLOYED_SERVICE="${{ github.event.client_payload.service_name || '' }}"
-          if [ -n "$DEPLOYED_SERVICE" ]; then
-            echo "🎯 Prioritizing validation of deployed service: $DEPLOYED_SERVICE"
-            
-            case "$DEPLOYED_SERVICE" in
-              frontend)
-                echo "Testing deployed frontend service..."
-                if curl -I -s --max-time 15 https://phshoesproject.com | head -1; then
-                  echo "✅ Deployed frontend service responding"
-                else
-                  echo "❌ Deployed frontend service not responding"
-                fi
-                ;;
-              user-accounts)
-                echo "Testing deployed user-accounts service..."
-                if curl -I -s --max-time 15 https://accounts.phshoesproject.com/system/status | head -1; then
-                  echo "✅ Deployed user-accounts service responding"
-                else
-                  echo "❌ Deployed user-accounts service not responding"
-                fi
-                ;;
-              catalog)
-                echo "Testing deployed catalog service..."
-                if curl -I -s --max-time 15 https://catalog.phshoesproject.com/system/status | head -1; then
-                  echo "✅ Deployed catalog service responding"
-                else
-                  echo "❌ Deployed catalog service not responding"
-                fi
-                ;;
-              alerts)
-                echo "Testing deployed alerts service..."
-                if curl -I -s --max-time 15 https://alerts.phshoesproject.com/system/status | head -1; then
-                  echo "✅ Deployed alerts service responding"
-                else
-                  echo "❌ Deployed alerts service not responding"
-                fi
-                ;;
-              text-search)
-                echo "Testing deployed text-search service..."
-                if curl -I -s --max-time 15 https://text-search.phshoesproject.com/system/status | head -1; then
-                  echo "✅ Deployed text-search service responding"
-                else
-                  echo "❌ Deployed text-search service not responding"
-                fi
-                ;;
-            esac
-            echo ""
+          # Test main domain
+          echo "Testing phshoesproject.com..."
+          if nslookup phshoesproject.com; then
+            echo "✅ Main domain resolves"
+          else
+            echo "❌ Main domain resolution failed"
           fi
           
-          # Test all services for comprehensive validation
-          echo "🔍 Testing all service endpoints..."
+          # Test subdomains
+          for subdomain in catalog accounts alerts text-search; do
+            echo "Testing ${subdomain}.phshoesproject.com..."
+            if nslookup ${subdomain}.phshoesproject.com; then
+              echo "✅ ${subdomain} subdomain resolves"
+            else
+              echo "❌ ${subdomain} subdomain resolution failed"
+            fi
+          done
+
+      - name: Test Service Endpoints
+        if: github.event.inputs.action == 'apply' || github.event.inputs.action == '' || github.event_name == 'repository_dispatch' || github.event_name == 'schedule'
+        run: |
+          echo "🔍 Testing service endpoints after DNS update..."
           
-          # Test frontend
+          # Wait a bit more for DNS propagation
+          sleep 10
+          
+          # Test all services
           echo "Testing frontend..."
           if curl -I -s --max-time 10 https://phshoesproject.com | head -1; then
             echo "✅ Frontend responding"
@@ -162,7 +186,6 @@ jobs:
             echo "❌ Frontend not responding"
           fi
           
-          # Test user accounts
           echo "Testing user accounts..."
           if curl -I -s --max-time 10 https://accounts.phshoesproject.com/system/status | head -1; then
             echo "✅ User accounts responding"
@@ -170,7 +193,6 @@ jobs:
             echo "❌ User accounts not responding"
           fi
           
-          # Test catalog
           echo "Testing catalog..."
           if curl -I -s --max-time 10 https://catalog.phshoesproject.com/system/status | head -1; then
             echo "✅ Catalog responding"
@@ -178,7 +200,6 @@ jobs:
             echo "❌ Catalog not responding"
           fi
           
-          # Test alerts
           echo "Testing alerts..."
           if curl -I -s --max-time 10 https://alerts.phshoesproject.com/system/status | head -1; then
             echo "✅ Alerts responding"
@@ -186,7 +207,6 @@ jobs:
             echo "❌ Alerts not responding"
           fi
           
-          # Test text-search
           echo "Testing text-search..."
           if curl -I -s --max-time 10 https://text-search.phshoesproject.com/system/status | head -1; then
             echo "✅ Text-search responding"
@@ -208,4 +228,4 @@ jobs:
           echo "Triggered By: ${{ github.event.client_payload.triggered_by || 'N/A' }}"
           echo "Workflow Run ID: ${{ github.event.client_payload.workflow_run_id || 'N/A' }}"
           echo ""
-          echo "✅ DNS update will now refresh routing for the deployed service"
+          echo "✅ DNS update workflow has been triggered"

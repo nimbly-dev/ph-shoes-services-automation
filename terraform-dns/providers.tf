@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.93"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
+    }
   }
 }
 
@@ -16,11 +20,6 @@ provider "aws" {
   }
 }
 
-provider "aws" {
-  alias  = "ecr_public"
-  region = "us-east-1"
-
-  default_tags {
-    tags = local.common_tags
-  }
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token != "" ? var.cloudflare_api_token : "0000000000000000000000000000000000000000"
 }

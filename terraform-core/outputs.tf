@@ -73,15 +73,7 @@ output "common_tags" {
   value       = local.common_tags
 }
 
-output "route53_zone_id" {
-  description = "Route53 hosted zone ID for phshoesproject.com"
-  value       = data.aws_route53_zone.frontend.zone_id
-}
-
-output "ecs_instance_public_ip" {
-  description = "Public IP of EC2 instance running services"
-  value       = length(data.aws_instances.ecs_instances.public_ips) > 0 ? data.aws_instances.ecs_instances.public_ips[0] : null
-}
+# DNS-related outputs moved to terraform-dns module
 
 output "backend_execution_role_arn" {
   description = "Shared execution role ARN for backend services"

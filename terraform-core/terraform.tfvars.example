@@ -57,11 +57,6 @@ github_repositories = [
   "ph-shoes-search-services"
 ]
 
-# Optional: Cloudflare DNS (if using Cloudflare instead of Route53)
-use_cloudflare_dns = false
-# cloudflare_api_token = "your-cloudflare-token"
-# cloudflare_zone_id = "your-zone-id"
-
 # Free Tier Usage Summary (Reference Only - Calculated Automatically)
 # After deployment, the enhanced dashboard will provide:
 # - Dashboards: 4/10 (40% used) - 3 existing + 1 enhanced

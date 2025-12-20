@@ -39,14 +39,15 @@ resource "aws_route53_record" "subdomains" {
 # Cloudflare DNS records with proxy enabled for service routing
 # Root domain A record - proxied for free SSL and DDoS protection
 resource "cloudflare_record" "frontend" {
-  count   = var.use_cloudflare_dns ? 1 : 0
-  zone_id = var.cloudflare_zone_id
-  name    = "@"  # @ represents the root domain
-  type    = "A"
-  content = length(data.aws_instances.ecs_instances.public_ips) > 0 ? data.aws_instances.ecs_instances.public_ips[0] : "127.0.0.1"
-  ttl     = 1     # TTL must be 1 when proxied=true (automatic)
-  proxied = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
-  comment = "Service routing - managed by terraform-dns workflow"
+  count           = var.use_cloudflare_dns ? 1 : 0
+  zone_id         = var.cloudflare_zone_id
+  name            = "@"  # @ represents the root domain
+  type            = "A"
+  content         = length(data.aws_instances.ecs_instances.public_ips) > 0 ? data.aws_instances.ecs_instances.public_ips[0] : "127.0.0.1"
+  ttl             = 1     # TTL must be 1 when proxied=true (automatic)
+  proxied         = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
+  comment         = "Service routing - managed by terraform-dns workflow"
+  allow_overwrite = true  # Allow replacing existing conflicting records
 }
 
 # Subdomain CNAME records pointing to root domain - proxied for consistent behavior
@@ -54,11 +55,12 @@ resource "cloudflare_record" "frontend" {
 resource "cloudflare_record" "subdomains" {
   for_each = var.use_cloudflare_dns ? toset(var.subdomain_services) : toset([])
   
-  zone_id = var.cloudflare_zone_id
-  name    = each.key
-  type    = "CNAME"
-  content = var.domain_name  # Point to root domain for consistent routing
-  ttl     = 1     # TTL must be 1 when proxied=true (automatic)
-  proxied = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
-  comment = "Service routing - managed by terraform-dns workflow"
+  zone_id         = var.cloudflare_zone_id
+  name            = each.key
+  type            = "CNAME"
+  content         = var.domain_name  # Point to root domain for consistent routing
+  ttl             = 1     # TTL must be 1 when proxied=true (automatic)
+  proxied         = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
+  comment         = "Service routing - managed by terraform-dns workflow"
+  allow_overwrite = true  # Allow replacing existing conflicting records
 }

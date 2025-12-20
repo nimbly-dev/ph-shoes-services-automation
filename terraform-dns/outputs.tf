@@ -13,17 +13,34 @@ output "dns_provider" {
   value       = var.use_cloudflare_dns ? "cloudflare" : "route53"
 }
 
+output "service_placement" {
+  description = "Current ECS service placement across instances"
+  value = {
+    frontend_instance    = data.external.service_placement.result.frontend_ip
+    accounts_instance    = data.external.service_placement.result.accounts_ip
+    catalog_instance     = data.external.service_placement.result.catalog_ip
+    alerts_instance      = data.external.service_placement.result.alerts_ip
+    text_search_instance = data.external.service_placement.result.text_search_ip
+  }
+}
+
 output "dns_records_created" {
-  description = "DNS records that were created"
+  description = "DNS records created with smart service routing"
   value = var.use_cloudflare_dns ? {
-    cloudflare_records = concat(
-      [for record in cloudflare_record.frontend : "${record.name} -> ${record.content}"],
-      [for record in cloudflare_record.subdomains : "${record.name}.${var.domain_name} -> ${record.content}"]
-    )
+    cloudflare_records = [
+      "phshoesproject.com -> ${data.external.service_placement.result.frontend_ip} (frontend)",
+      "accounts.phshoesproject.com -> ${data.external.service_placement.result.accounts_ip} (user-accounts)",
+      "catalog.phshoesproject.com -> ${data.external.service_placement.result.catalog_ip} (catalog)",
+      "alerts.phshoesproject.com -> ${data.external.service_placement.result.alerts_ip} (alerts)",
+      "text-search.phshoesproject.com -> ${data.external.service_placement.result.text_search_ip} (text-search)"
+    ]
   } : {
-    route53_records = concat(
-      [for record in aws_route53_record.frontend : "${record.name} -> ${join(", ", record.records)}"],
-      [for record in aws_route53_record.subdomains : "${record.name} -> ${join(", ", record.records)}"]
-    )
+    route53_records = [
+      "phshoesproject.com -> ${data.external.service_placement.result.frontend_ip} (frontend)",
+      "accounts.phshoesproject.com -> ${data.external.service_placement.result.accounts_ip} (user-accounts)",
+      "catalog.phshoesproject.com -> ${data.external.service_placement.result.catalog_ip} (catalog)",
+      "alerts.phshoesproject.com -> ${data.external.service_placement.result.alerts_ip} (alerts)",
+      "text-search.phshoesproject.com -> ${data.external.service_placement.result.text_search_ip} (text-search)"
+    ]
   }
 }

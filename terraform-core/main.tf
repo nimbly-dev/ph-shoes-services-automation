@@ -127,11 +127,21 @@ resource "aws_security_group_rule" "frontend_http" {
   security_group_id = module.ecs_cluster.instance_security_group_id
 }
 
-# Backend service ports (8081-8085)
+# Backend service ports (8081-8085) - for direct access and nginx upstream
 resource "aws_security_group_rule" "backend_services" {
   type              = "ingress"
   from_port         = 8081
   to_port           = 8085
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = module.ecs_cluster.instance_security_group_id
+}
+
+# Nginx reverse proxy port (80) - for Cloudflare proxy integration
+resource "aws_security_group_rule" "nginx_proxy" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = module.ecs_cluster.instance_security_group_id

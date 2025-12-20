@@ -2,8 +2,8 @@
 domain_name = "phshoesproject.com"
 subdomain_services = ["catalog", "accounts", "alerts", "text-search"]
 
-# Cloudflare DNS configuration - enabled to manage DNS via Cloudflare
-use_cloudflare_dns = true
+# DNS Configuration - Use Route53 to match original working setup
+use_cloudflare_dns = false  # Switch back to Route53 like original terraform-core
 # cloudflare_api_token will be set via environment variable or GitHub secrets
 # cloudflare_zone_id will be set via environment variable or GitHub secrets
 

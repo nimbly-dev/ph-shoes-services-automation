@@ -89,7 +89,7 @@ jobs:
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
-          terraform init
+          terraform init -upgrade
           echo "🚀 Applying DNS updates..."
           terraform apply -auto-approve
           echo "✅ DNS updates completed"

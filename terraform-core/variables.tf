@@ -400,3 +400,5 @@ variable "enhanced_dashboard_log_sampling_rate" {
     error_message = "Enhanced dashboard log sampling rate must be between 0 and 1."
   }
 }
+
+# DNS configuration moved to separate terraform-dns module

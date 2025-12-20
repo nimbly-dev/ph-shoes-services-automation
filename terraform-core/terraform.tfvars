@@ -37,8 +37,8 @@ ecs_instance_ingress_rules = [
   }
 ]
 
-# Cloudflare DNS configuration - temporarily disabled to deploy dashboards
-use_cloudflare_dns = false
+# Cloudflare DNS configuration - moved to separate terraform-dns module
+# use_cloudflare_dns = true
 # cloudflare_api_token will be set via environment variable or GitHub secrets
 # cloudflare_zone_id will be set via environment variable or GitHub secrets
 

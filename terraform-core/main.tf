@@ -78,11 +78,6 @@ module "github_oidc_role" {
   tags                       = local.common_tags
 }
 
-data "aws_route53_zone" "frontend" {
-  name         = "phshoesproject.com"
-  private_zone = false
-}
-
 module "network" {
   source = "./modules/network"
 
@@ -132,61 +127,7 @@ resource "aws_security_group_rule" "frontend_http" {
   security_group_id = module.ecs_cluster.instance_security_group_id
 }
 
-# Get EC2 instance for Route 53 record
-data "aws_instances" "ecs_instances" {
-  filter {
-    name   = "tag:aws:autoscaling:groupName"
-    values = [module.ecs_cluster.autoscaling_group_name]
-  }
-
-  filter {
-    name   = "instance-state-name"
-    values = ["running"]
-  }
-
-  depends_on = [module.ecs_cluster]
-}
-
-# Route 53 A records
-resource "aws_route53_record" "frontend" {
-  zone_id = data.aws_route53_zone.frontend.zone_id
-  name    = "phshoesproject.com"
-  type    = "A"
-  ttl     = 300
-  records = length(data.aws_instances.ecs_instances.public_ips) > 0 ? [data.aws_instances.ecs_instances.public_ips[0]] : ["127.0.0.1"]
-}
-
-resource "aws_route53_record" "catalog" {
-  zone_id = data.aws_route53_zone.frontend.zone_id
-  name    = "catalog.phshoesproject.com"
-  type    = "A"
-  ttl     = 300
-  records = length(data.aws_instances.ecs_instances.public_ips) > 0 ? [data.aws_instances.ecs_instances.public_ips[0]] : ["127.0.0.1"]
-}
-
-resource "aws_route53_record" "text_search" {
-  zone_id = data.aws_route53_zone.frontend.zone_id
-  name    = "text-search.phshoesproject.com"
-  type    = "A"
-  ttl     = 300
-  records = length(data.aws_instances.ecs_instances.public_ips) > 0 ? [data.aws_instances.ecs_instances.public_ips[0]] : ["127.0.0.1"]
-}
-
-resource "aws_route53_record" "accounts" {
-  zone_id = data.aws_route53_zone.frontend.zone_id
-  name    = "accounts.phshoesproject.com"
-  type    = "A"
-  ttl     = 300
-  records = length(data.aws_instances.ecs_instances.public_ips) > 0 ? [data.aws_instances.ecs_instances.public_ips[0]] : ["127.0.0.1"]
-}
-
-resource "aws_route53_record" "alerts" {
-  zone_id = data.aws_route53_zone.frontend.zone_id
-  name    = "alerts.phshoesproject.com"
-  type    = "A"
-  ttl     = 300
-  records = length(data.aws_instances.ecs_instances.public_ips) > 0 ? [data.aws_instances.ecs_instances.public_ips[0]] : ["127.0.0.1"]
-}
+# DNS management moved to separate terraform-dns module
 
 # CloudWatch Monitoring
 module "cloudwatch_monitoring" {

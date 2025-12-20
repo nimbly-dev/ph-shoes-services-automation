@@ -272,22 +272,7 @@ jobs:
             exit 1
           fi
 
-      - name: Trigger automatic DNS update
-        if: steps.deployment_status.outputs.deployment_success == 'true'
-        run: |
-          echo "🌐 Triggering DNS update immediately after deployment..."
-          echo "💡 DNS must be updated before health checks to avoid 522 errors"
-          
-          # Try to trigger DNS update workflow using GitHub CLI
-          if gh workflow run auto-dns-update.yml --repo ${{ github.repository }} 2>/dev/null; then
-            echo "✅ DNS update workflow triggered successfully"
-          else
-            echo "⚠️ DNS update trigger failed - continuing with manual fallback"
-            echo "💡 You may need to manually run the auto-dns-update workflow"
-            echo "🔧 Command: gh workflow run auto-dns-update.yml"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # DNS updates are now handled manually via auto-dns-update.yml workflow
 
       - name: Wait for DNS propagation
         if: steps.deployment_status.outputs.deployment_success == 'true'

@@ -25,7 +25,7 @@ resource "aws_iam_role" "github" {
 
 data "aws_iam_policy_document" "assume_role" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
     principals {
@@ -80,8 +80,8 @@ resource "aws_iam_role_policy" "additional" {
 
 data "aws_iam_policy_document" "ecs_execute" {
   statement {
-    sid     = "EcsExecuteCommand"
-    effect  = "Allow"
+    sid    = "EcsExecuteCommand"
+    effect = "Allow"
     actions = [
       "ecs:ExecuteCommand",
       "ssmmessages:CreateControlChannel",

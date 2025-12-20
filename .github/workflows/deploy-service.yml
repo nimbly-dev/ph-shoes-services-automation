@@ -55,7 +55,7 @@ jobs:
         run: |
           echo "🔍 Checking if cluster needs to be scaled up..."
           CURRENT_CAPACITY=$(aws autoscaling describe-auto-scaling-groups \
-            --auto-scaling-group-names ph-shoes-services-ecs-asg \
+            --auto-scaling-group-names ph-shoes-application-services-ecs-asg \
             --region ${{ env.AWS_REGION }} \
             --query 'AutoScalingGroups[0].DesiredCapacity' \
             --output text)
@@ -63,7 +63,7 @@ jobs:
           if [ "$CURRENT_CAPACITY" = "0" ]; then
             echo "⚡ Cluster is at 0 capacity, scaling up to 1 instance..."
             aws autoscaling set-desired-capacity \
-              --auto-scaling-group-name ph-shoes-services-ecs-asg \
+              --auto-scaling-group-name ph-shoes-application-services-ecs-asg \
               --desired-capacity 1 \
               --region ${{ env.AWS_REGION }}
             
@@ -89,7 +89,7 @@ jobs:
         id: secrets
         run: |
           # Set common configuration
-          echo "log_group=/ecs/ph-shoes-services-automation-$SERVICE" >> $GITHUB_OUTPUT
+          echo "log_group=/ecs/ph-shoes-application-services-$SERVICE" >> $GITHUB_OUTPUT
           
           # Set service type and basic config
           if [ "$SERVICE" = "frontend" ]; then
@@ -184,7 +184,7 @@ jobs:
         working-directory: terraform-service-deploy
         env:
           TF_VAR_service_id: ${{ env.SERVICE }}
-          TF_VAR_service_name: ph-shoes-services-automation-${{ env.SERVICE }}
+          TF_VAR_service_name: ph-shoes-application-services-${{ env.SERVICE }}
           TF_VAR_container_image: ${{ env.IMAGE_URI }}
           TF_VAR_container_port: ${{ steps.secrets.outputs.port }}
           TF_VAR_host_port: ${{ steps.secrets.outputs.host_port }}
@@ -209,8 +209,8 @@ jobs:
           # Check each backend service
           for service in catalog user-accounts alerts; do
             RUNNING=$(aws ecs describe-services \
-              --cluster ph-shoes-services-ecs \
-              --services ph-shoes-services-automation-$service \
+              --cluster ph-shoes-application-services-ecs \
+              --services ph-shoes-application-services-$service \
               --region ${{ env.AWS_REGION }} \
               --query 'services[0].runningCount' \
               --output text 2>/dev/null || echo "0")
@@ -242,8 +242,8 @@ jobs:
           # Wait for ECS service to reach stable state
           for i in {1..30}; do
             SERVICE_INFO=$(aws ecs describe-services \
-              --cluster ph-shoes-services-ecs \
-              --services ph-shoes-services-automation-${{ env.SERVICE }} \
+              --cluster ph-shoes-application-services-ecs \
+              --services ph-shoes-application-services-${{ env.SERVICE }} \
               --region ${{ env.AWS_REGION }} \
               --query 'services[0].{running:runningCount,desired:desiredCount,deployments:deployments[?status==`PRIMARY`].{status:status,rolloutState:rolloutState}}' --output json)
             

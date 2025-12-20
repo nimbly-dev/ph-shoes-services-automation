@@ -81,10 +81,10 @@ resource "aws_launch_template" "ecs" {
   block_device_mappings {
     device_name = "/dev/xvda"
     ebs {
-      volume_size = max(var.instance_volume_size, 30)
-      volume_type = "gp3"
+      volume_size           = max(var.instance_volume_size, 30)
+      volume_type           = "gp3"
       delete_on_termination = true
-      encrypted = true
+      encrypted             = true
     }
   }
 
@@ -172,7 +172,7 @@ resource "aws_ecs_capacity_provider" "this" {
 }
 
 resource "aws_ecs_cluster_capacity_providers" "this" {
-  cluster_name = aws_ecs_cluster.this.name
+  cluster_name       = aws_ecs_cluster.this.name
   capacity_providers = [aws_ecs_capacity_provider.this.name]
 
   default_capacity_provider_strategy {

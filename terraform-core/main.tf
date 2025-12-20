@@ -25,12 +25,12 @@ locals {
 module "state_backend" {
   source = "./modules/state-backend"
 
-  bucket_name            = var.state_bucket_name
-  create_bucket          = var.create_state_bucket
-  dynamodb_table_name    = var.state_lock_table_name
-  dynamodb_read_capacity = var.state_lock_read_capacity
+  bucket_name             = var.state_bucket_name
+  create_bucket           = var.create_state_bucket
+  dynamodb_table_name     = var.state_lock_table_name
+  dynamodb_read_capacity  = var.state_lock_read_capacity
   dynamodb_write_capacity = var.state_lock_write_capacity
-  tags                   = local.common_tags
+  tags                    = local.common_tags
 }
 
 module "project_resource_group" {
@@ -109,17 +109,17 @@ module "frontend_iam_roles" {
 module "ecs_cluster" {
   source = "./modules/ecs-cluster"
 
-  cluster_name            = var.ecs_cluster_name
-  vpc_id                  = module.network.vpc_id
-  subnet_ids              = module.network.public_subnet_ids
-  instance_type           = var.ecs_instance_type
-  min_size                = var.ecs_min_size
-  max_size                = var.ecs_max_size
-  desired_capacity        = var.ecs_desired_capacity
-  key_name                = var.ecs_instance_key_name
-  instance_volume_size    = var.ecs_instance_volume_size
-  instance_ingress_rules  = var.ecs_instance_ingress_rules
-  tags                    = local.common_tags
+  cluster_name           = var.ecs_cluster_name
+  vpc_id                 = module.network.vpc_id
+  subnet_ids             = module.network.public_subnet_ids
+  instance_type          = var.ecs_instance_type
+  min_size               = var.ecs_min_size
+  max_size               = var.ecs_max_size
+  desired_capacity       = var.ecs_desired_capacity
+  key_name               = var.ecs_instance_key_name
+  instance_volume_size   = var.ecs_instance_volume_size
+  instance_ingress_rules = var.ecs_instance_ingress_rules
+  tags                   = local.common_tags
 }
 
 # HTTP traffic rule (used by all services on port 80)
@@ -191,6 +191,37 @@ resource "aws_route53_record" "alerts" {
   type    = "A"
   ttl     = 300
   records = length(data.aws_instances.ecs_instances.public_ips) > 0 ? [data.aws_instances.ecs_instances.public_ips[0]] : ["127.0.0.1"]
+}
+
+# CloudWatch Monitoring
+module "cloudwatch_monitoring" {
+  count  = var.enable_cloudwatch_monitoring ? 1 : 0
+  source = "./modules/cloudwatch-monitoring"
+
+  cluster_name     = var.ecs_cluster_name
+  service_names    = var.monitored_services
+  cpu_threshold    = var.cloudwatch_cpu_threshold
+  memory_threshold = var.cloudwatch_memory_threshold
+  alarm_email      = var.cloudwatch_alarm_email
+  tags             = local.common_tags
+
+  depends_on = [module.ecs_cluster]
+}
+
+# CloudWatch Dashboards (Task 12.2)
+module "cloudwatch_dashboards" {
+  count  = var.enable_cloudwatch_dashboards ? 1 : 0
+  source = "./modules/cloudwatch-dashboards"
+
+  cluster_name           = var.ecs_cluster_name
+  service_names          = var.monitored_services
+  autoscaling_group_name = module.ecs_cluster.autoscaling_group_name
+  alarm_actions          = var.enable_cloudwatch_monitoring ? [module.cloudwatch_monitoring[0].sns_topic_arn] : []
+  enable_cost_tracking   = var.enable_cost_tracking
+  log_retention_days     = var.log_retention_days
+  tags                   = local.common_tags
+
+  depends_on = [module.ecs_cluster, module.cloudwatch_monitoring]
 }
 
 

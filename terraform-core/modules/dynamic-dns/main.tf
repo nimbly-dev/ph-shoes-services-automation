@@ -4,7 +4,7 @@
 # Dynamic service discovery using external data sources with detailed logging
 data "external" "service_instance" {
   for_each = var.services
-  
+
   program = ["bash", "-c", <<-EOT
     # Enhanced service discovery with detailed logging
     SERVICE_NAME="${each.value.service_name}"
@@ -75,12 +75,12 @@ data "external" "service_instance" {
 # Create Cloudflare DNS records dynamically
 resource "cloudflare_record" "service" {
   for_each = var.services
-  
+
   zone_id = var.cloudflare_zone_id
   name    = each.value.domain
   content = data.external.service_instance[each.key].result.ip
   type    = "A"
-  ttl     = 1     # TTL must be 1 when proxied is true
-  proxied = true  # Enable Cloudflare proxy for HTTPS
+  ttl     = 1    # TTL must be 1 when proxied is true
+  proxied = true # Enable Cloudflare proxy for HTTPS
   comment = "${each.value.description} - Dynamic routing"
 }

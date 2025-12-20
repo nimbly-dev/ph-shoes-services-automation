@@ -3,6 +3,16 @@ variable "service_name" {
   type        = string
 }
 
+variable "service_type" {
+  description = "Type of service (frontend or backend) for log group naming"
+  type        = string
+  default     = "backend"
+  validation {
+    condition     = contains(["frontend", "backend"], var.service_type)
+    error_message = "Service type must be either 'frontend' or 'backend'."
+  }
+}
+
 variable "cluster_arn" {
   description = "Target ECS cluster ARN"
   type        = string

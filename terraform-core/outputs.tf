@@ -103,4 +103,61 @@ output "frontend_task_role_arn" {
   value       = module.frontend_iam_roles.task_role_arn
 }
 
+# CloudWatch Monitoring Outputs
+output "cloudwatch_sns_topic_arn" {
+  description = "ARN of the SNS topic for CloudWatch alarms"
+  value       = var.enable_cloudwatch_monitoring ? module.cloudwatch_monitoring[0].sns_topic_arn : null
+}
+
+output "cloudwatch_sns_topic_name" {
+  description = "Name of the SNS topic for CloudWatch alarms"
+  value       = var.enable_cloudwatch_monitoring ? module.cloudwatch_monitoring[0].sns_topic_name : null
+}
+
+output "cloudwatch_task_count_alarms" {
+  description = "Names of the task count zero alarms"
+  value       = var.enable_cloudwatch_monitoring ? module.cloudwatch_monitoring[0].task_count_alarm_names : []
+}
+
+output "cloudwatch_cpu_alarms" {
+  description = "Names of the CPU utilization alarms"
+  value       = var.enable_cloudwatch_monitoring ? module.cloudwatch_monitoring[0].cpu_alarm_names : []
+}
+
+output "cloudwatch_memory_alarms" {
+  description = "Names of the memory utilization alarms"
+  value       = var.enable_cloudwatch_monitoring ? module.cloudwatch_monitoring[0].memory_alarm_names : []
+}
+
+# CloudWatch Dashboards Outputs (Task 12.2)
+output "system_overview_dashboard_url" {
+  description = "URL for the System Overview Dashboard"
+  value       = var.enable_cloudwatch_dashboards ? module.cloudwatch_dashboards[0].system_overview_dashboard_url : null
+}
+
+output "service_performance_dashboard_url" {
+  description = "URL for the Service Performance Dashboard"
+  value       = var.enable_cloudwatch_dashboards ? module.cloudwatch_dashboards[0].service_performance_dashboard_url : null
+}
+
+output "infrastructure_dashboard_url" {
+  description = "URL for the Infrastructure Dashboard"
+  value       = var.enable_cloudwatch_dashboards ? module.cloudwatch_dashboards[0].infrastructure_dashboard_url : null
+}
+
+output "dashboard_names" {
+  description = "List of created CloudWatch dashboard names"
+  value       = var.enable_cloudwatch_dashboards ? module.cloudwatch_dashboards[0].dashboard_names : []
+}
+
+output "cloudwatch_insights_queries" {
+  description = "List of CloudWatch Insights query definition names"
+  value       = var.enable_cloudwatch_dashboards ? module.cloudwatch_dashboards[0].query_definition_names : []
+}
+
+output "composite_alarms" {
+  description = "List of composite alarm names for intelligent alerting"
+  value       = var.enable_cloudwatch_dashboards ? module.cloudwatch_dashboards[0].composite_alarm_names : []
+}
+
 

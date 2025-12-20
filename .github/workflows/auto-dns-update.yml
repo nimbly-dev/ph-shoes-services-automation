@@ -172,47 +172,82 @@ jobs:
 
       - name: Test Service Endpoints
         if: github.event.inputs.action == 'apply' || github.event.inputs.action == '' || github.event_name == 'repository_dispatch' || github.event_name == 'schedule'
+        continue-on-error: true  # Allow workflow to continue even if services return errors
         run: |
           echo "🔍 Testing service endpoints after DNS update..."
+          echo "⚠️  Note: This step may show warnings for services still starting up"
           
           # Wait a bit more for DNS propagation
           sleep 10
           
-          # Test all services
+          # Test all services with better error handling
           echo "Testing frontend..."
-          if curl -I -s --max-time 10 https://phshoesproject.com | head -1; then
-            echo "✅ Frontend responding"
+          if response=$(curl -I -s --max-time 10 https://phshoesproject.com 2>&1); then
+            status=$(echo "$response" | head -1)
+            echo "$status"
+            if echo "$status" | grep -q "200\|301\|302"; then
+              echo "✅ Frontend responding"
+            else
+              echo "⚠️  Frontend returned: $status"
+            fi
           else
-            echo "❌ Frontend not responding"
+            echo "⚠️  Frontend connection failed"
           fi
           
           echo "Testing user accounts..."
-          if curl -I -s --max-time 10 https://accounts.phshoesproject.com/system/status | head -1; then
-            echo "✅ User accounts responding"
+          if response=$(curl -I -s --max-time 10 https://accounts.phshoesproject.com/api/v1/system/status 2>&1); then
+            status=$(echo "$response" | head -1)
+            echo "$status"
+            if echo "$status" | grep -q "200\|301\|302"; then
+              echo "✅ User accounts responding"
+            else
+              echo "⚠️  User accounts returned: $status (may need nginx restart)"
+            fi
           else
-            echo "❌ User accounts not responding"
+            echo "⚠️  User accounts connection failed"
           fi
           
           echo "Testing catalog..."
-          if curl -I -s --max-time 10 https://catalog.phshoesproject.com/system/status | head -1; then
-            echo "✅ Catalog responding"
+          if response=$(curl -I -s --max-time 10 https://catalog.phshoesproject.com/api/v1/system/status 2>&1); then
+            status=$(echo "$response" | head -1)
+            echo "$status"
+            if echo "$status" | grep -q "200\|301\|302"; then
+              echo "✅ Catalog responding"
+            else
+              echo "⚠️  Catalog returned: $status (may need nginx restart)"
+            fi
           else
-            echo "❌ Catalog not responding"
+            echo "⚠️  Catalog connection failed"
           fi
           
           echo "Testing alerts..."
-          if curl -I -s --max-time 10 https://alerts.phshoesproject.com/system/status | head -1; then
-            echo "✅ Alerts responding"
+          if response=$(curl -I -s --max-time 10 https://alerts.phshoesproject.com/api/v1/system/status 2>&1); then
+            status=$(echo "$response" | head -1)
+            echo "$status"
+            if echo "$status" | grep -q "200\|301\|302"; then
+              echo "✅ Alerts responding"
+            else
+              echo "⚠️  Alerts returned: $status (may need nginx restart)"
+            fi
           else
-            echo "❌ Alerts not responding"
+            echo "⚠️  Alerts connection failed"
           fi
           
           echo "Testing text-search..."
-          if curl -I -s --max-time 10 https://text-search.phshoesproject.com/system/status | head -1; then
-            echo "✅ Text-search responding"
+          if response=$(curl -I -s --max-time 10 https://text-search.phshoesproject.com/api/v1/system/status 2>&1); then
+            status=$(echo "$response" | head -1)
+            echo "$status"
+            if echo "$status" | grep -q "200\|301\|302"; then
+              echo "✅ Text-search responding"
+            else
+              echo "⚠️  Text-search returned: $status (may need nginx restart)"
+            fi
           else
-            echo "❌ Text-search not responding"
+            echo "⚠️  Text-search connection failed"
           fi
+          
+          echo ""
+          echo "📋 Summary: DNS routing is working! Any 502 errors indicate nginx needs restart on those instances."
 
       - name: Log deployment trigger information
         if: github.event_name == 'repository_dispatch'

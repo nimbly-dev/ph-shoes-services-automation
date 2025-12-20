@@ -13,19 +13,19 @@ variable "environment" {
 variable "app_name" {
   description = "Logical application or service name"
   type        = string
-  default     = "ph-shoes-application-services"
+  default     = "ph-shoes-services"
 }
 
 variable "project_name" {
   description = "Project tag used across the stack"
   type        = string
-  default     = "ph-shoes-application-services"
+  default     = "ph-shoes-services"
 }
 
 variable "application_name" {
   description = "Human-friendly AWS Applications console entry"
   type        = string
-  default     = "ph-shoes-application-services"
+  default     = "ph-shoes-services"
 }
 
 variable "application_description" {
@@ -185,7 +185,7 @@ variable "availability_zones" {
 variable "ecs_cluster_name" {
   description = "Name of the shared ECS cluster"
   type        = string
-  default     = "ph-shoes-application-services-ecs"
+  default     = "ph-shoes-services-ecs"
 }
 
 variable "ecs_instance_type" {
@@ -329,3 +329,88 @@ variable "enable_cost_tracking" {
 }
 
 
+# Enhanced CloudWatch Dashboard variables
+variable "enable_enhanced_cloudwatch_dashboard" {
+  description = "Enable the enhanced CloudWatch dashboard with comprehensive observability features"
+  type        = bool
+  default     = true
+}
+
+variable "enhanced_dashboard_log_retention_days" {
+  description = "Log retention period in days for enhanced dashboard (optimized for free tier: 1-7 days)"
+  type        = number
+  default     = 3
+
+  validation {
+    condition     = var.enhanced_dashboard_log_retention_days >= 1 && var.enhanced_dashboard_log_retention_days <= 7
+    error_message = "Enhanced dashboard log retention must be between 1 and 7 days for free tier optimization."
+  }
+}
+
+variable "enhanced_dashboard_refresh_interval" {
+  description = "Dashboard auto-refresh interval in seconds (minimum 300 for free tier optimization)"
+  type        = number
+  default     = 300
+
+  validation {
+    condition     = var.enhanced_dashboard_refresh_interval >= 300
+    error_message = "Enhanced dashboard refresh interval must be at least 300 seconds (5 minutes) for free tier optimization."
+  }
+}
+
+variable "enhanced_dashboard_max_widgets" {
+  description = "Maximum number of widgets in enhanced dashboard (maximum 50 for free tier compliance)"
+  type        = number
+  default     = 32
+
+  validation {
+    condition     = var.enhanced_dashboard_max_widgets <= 50
+    error_message = "Enhanced dashboard widget count must not exceed 50 to stay within free tier metric limits."
+  }
+}
+
+variable "enhanced_dashboard_api_budget" {
+  description = "Monthly API request budget for enhanced dashboard (maximum 10,000 for free tier)"
+  type        = number
+  default     = 2900
+
+  validation {
+    condition     = var.enhanced_dashboard_api_budget <= 10000
+    error_message = "Enhanced dashboard API request budget must not exceed 10,000 requests per month (free tier limit)."
+  }
+}
+
+variable "enable_enhanced_free_tier_monitoring" {
+  description = "Enable free tier usage monitoring and alerts for enhanced dashboard"
+  type        = bool
+  default     = true
+}
+
+variable "enable_enhanced_security_monitoring" {
+  description = "Enable security event monitoring in the enhanced dashboard"
+  type        = bool
+  default     = true
+}
+
+variable "enable_enhanced_ecs_monitoring" {
+  description = "Enable ECS deployment and task lifecycle monitoring in enhanced dashboard"
+  type        = bool
+  default     = true
+}
+
+variable "enable_enhanced_query_optimization" {
+  description = "Enable query optimization features for enhanced dashboard free tier compliance"
+  type        = bool
+  default     = true
+}
+
+variable "enhanced_dashboard_log_sampling_rate" {
+  description = "Log sampling rate for enhanced dashboard high-volume scenarios (0.1 = 10% sampling, 1.0 = 100%)"
+  type        = number
+  default     = 1.0
+
+  validation {
+    condition     = var.enhanced_dashboard_log_sampling_rate > 0 && var.enhanced_dashboard_log_sampling_rate <= 1
+    error_message = "Enhanced dashboard log sampling rate must be between 0 and 1."
+  }
+}

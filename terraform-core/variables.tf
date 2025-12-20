@@ -257,26 +257,6 @@ variable "log_retention_days" {
   default     = 7
 }
 
-# Cloudflare variables
-variable "cloudflare_api_token" {
-  description = "Cloudflare API token for DNS management"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "cloudflare_zone_id" {
-  description = "Cloudflare zone ID for phshoesproject.com"
-  type        = string
-  default     = ""
-}
-
-variable "use_cloudflare_dns" {
-  description = "Use Cloudflare for DNS management instead of Route53"
-  type        = bool
-  default     = false
-}
-
 # CloudWatch Monitoring variables
 variable "enable_cloudwatch_monitoring" {
   description = "Enable CloudWatch monitoring and alarms for ECS services"
@@ -378,6 +358,12 @@ variable "enhanced_dashboard_api_budget" {
     condition     = var.enhanced_dashboard_api_budget <= 10000
     error_message = "Enhanced dashboard API request budget must not exceed 10,000 requests per month (free tier limit)."
   }
+}
+
+variable "enhanced_dashboard_load_balancer_name" {
+  description = "Application Load Balancer name for enhanced dashboard performance monitoring (optional)"
+  type        = string
+  default     = ""
 }
 
 variable "enable_enhanced_free_tier_monitoring" {

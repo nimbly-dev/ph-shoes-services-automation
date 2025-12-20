@@ -23,7 +23,7 @@ resource "aws_cloudwatch_log_group" "service" {
   count             = var.log_group_name == "" ? 1 : 0
   name              = local.default_log_group_name
   retention_in_days = var.log_retention_in_days
-  tags              = merge(var.tags, {
+  tags = merge(var.tags, {
     ServiceName = var.service_name
     ServiceType = var.service_type
   })

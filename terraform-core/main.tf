@@ -147,9 +147,8 @@ data "aws_instances" "ecs_instances" {
   depends_on = [module.ecs_cluster]
 }
 
-# Route 53 A records (only when NOT using Cloudflare)
+# Route 53 A records
 resource "aws_route53_record" "frontend" {
-  count   = var.use_cloudflare_dns ? 0 : 1
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = "phshoesproject.com"
   type    = "A"
@@ -158,7 +157,6 @@ resource "aws_route53_record" "frontend" {
 }
 
 resource "aws_route53_record" "catalog" {
-  count   = var.use_cloudflare_dns ? 0 : 1
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = "catalog.phshoesproject.com"
   type    = "A"
@@ -167,7 +165,6 @@ resource "aws_route53_record" "catalog" {
 }
 
 resource "aws_route53_record" "text_search" {
-  count   = var.use_cloudflare_dns ? 0 : 1
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = "text-search.phshoesproject.com"
   type    = "A"
@@ -176,7 +173,6 @@ resource "aws_route53_record" "text_search" {
 }
 
 resource "aws_route53_record" "accounts" {
-  count   = var.use_cloudflare_dns ? 0 : 1
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = "accounts.phshoesproject.com"
   type    = "A"
@@ -185,7 +181,6 @@ resource "aws_route53_record" "accounts" {
 }
 
 resource "aws_route53_record" "alerts" {
-  count   = var.use_cloudflare_dns ? 0 : 1
   zone_id = data.aws_route53_zone.frontend.zone_id
   name    = "alerts.phshoesproject.com"
   type    = "A"
@@ -220,6 +215,36 @@ module "cloudwatch_dashboards" {
   enable_cost_tracking   = var.enable_cost_tracking
   log_retention_days     = var.log_retention_days
   tags                   = local.common_tags
+
+  depends_on = [module.ecs_cluster, module.cloudwatch_monitoring]
+}
+
+# Enhanced CloudWatch Dashboard - Comprehensive Observability Platform
+module "enhanced_cloudwatch_dashboard" {
+  count  = var.enable_enhanced_cloudwatch_dashboard ? 1 : 0
+  source = "./modules/enhanced-cloudwatch-dashboard"
+
+  cluster_name           = var.ecs_cluster_name
+  service_names          = var.monitored_services
+  autoscaling_group_name = module.ecs_cluster.autoscaling_group_name
+  load_balancer_name     = var.enhanced_dashboard_load_balancer_name
+  alarm_actions          = var.enable_cloudwatch_monitoring ? [module.cloudwatch_monitoring[0].sns_topic_arn] : []
+
+  # Free tier optimization settings
+  log_retention_days         = var.enhanced_dashboard_log_retention_days
+  dashboard_refresh_interval = var.enhanced_dashboard_refresh_interval
+  max_widget_count           = var.enhanced_dashboard_max_widgets
+  api_request_budget         = var.enhanced_dashboard_api_budget
+
+  # Feature toggles
+  enable_cost_tracking             = var.enable_cost_tracking
+  enable_free_tier_monitoring      = var.enable_enhanced_free_tier_monitoring
+  enable_security_monitoring       = var.enable_enhanced_security_monitoring
+  enable_ecs_deployment_monitoring = var.enable_enhanced_ecs_monitoring
+  query_optimization_enabled       = var.enable_enhanced_query_optimization
+  log_sampling_rate                = var.enhanced_dashboard_log_sampling_rate
+
+  tags = local.common_tags
 
   depends_on = [module.ecs_cluster, module.cloudwatch_monitoring]
 }

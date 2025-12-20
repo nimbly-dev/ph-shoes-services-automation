@@ -161,3 +161,60 @@ output "composite_alarms" {
 }
 
 
+# Enhanced CloudWatch Dashboard Outputs
+output "enhanced_dashboard_url" {
+  description = "URL for the Enhanced Observability Dashboard"
+  value       = var.enable_enhanced_cloudwatch_dashboard ? module.enhanced_cloudwatch_dashboard[0].enhanced_dashboard_url : null
+}
+
+output "enhanced_dashboard_name" {
+  description = "Name of the enhanced observability dashboard"
+  value       = var.enable_enhanced_cloudwatch_dashboard ? module.enhanced_cloudwatch_dashboard[0].enhanced_dashboard_name : null
+}
+
+output "enhanced_query_definitions" {
+  description = "List of enhanced CloudWatch Insights query definition names"
+  value       = var.enable_enhanced_cloudwatch_dashboard ? module.enhanced_cloudwatch_dashboard[0].query_definition_names : []
+}
+
+output "enhanced_log_groups" {
+  description = "List of managed log group names with optimized retention"
+  value       = var.enable_enhanced_cloudwatch_dashboard ? module.enhanced_cloudwatch_dashboard[0].log_group_names : []
+}
+
+output "enhanced_free_tier_usage" {
+  description = "Enhanced dashboard free tier usage summary"
+  value       = var.enable_enhanced_cloudwatch_dashboard ? module.enhanced_cloudwatch_dashboard[0].free_tier_usage_summary : null
+}
+
+output "enhanced_dashboard_panels" {
+  description = "Summary of enhanced dashboard panels and widget counts"
+  value       = var.enable_enhanced_cloudwatch_dashboard ? module.enhanced_cloudwatch_dashboard[0].dashboard_panels_summary : null
+}
+
+output "enhanced_insights_query_urls" {
+  description = "Direct URLs to enhanced CloudWatch Insights queries"
+  value       = var.enable_enhanced_cloudwatch_dashboard ? module.enhanced_cloudwatch_dashboard[0].cloudwatch_insights_query_urls : null
+}
+
+output "enhanced_free_tier_compliance" {
+  description = "Enhanced dashboard free tier compliance status and safety margins"
+  value       = var.enable_enhanced_cloudwatch_dashboard ? module.enhanced_cloudwatch_dashboard[0].free_tier_compliance_status : null
+}
+
+output "enhanced_monitoring_alarms" {
+  description = "List of enhanced monitoring alarm names for usage tracking"
+  value       = var.enable_enhanced_cloudwatch_dashboard ? module.enhanced_cloudwatch_dashboard[0].monitoring_alarm_names : []
+}
+
+# Combined Dashboard Summary
+output "all_dashboard_summary" {
+  description = "Summary of all CloudWatch dashboards (existing + enhanced)"
+  value = {
+    existing_dashboards   = var.enable_cloudwatch_dashboards ? module.cloudwatch_dashboards[0].dashboard_names : []
+    enhanced_dashboard    = var.enable_enhanced_cloudwatch_dashboard ? [module.enhanced_cloudwatch_dashboard[0].enhanced_dashboard_name] : []
+    total_dashboard_count = (var.enable_cloudwatch_dashboards ? 3 : 0) + (var.enable_enhanced_cloudwatch_dashboard ? 1 : 0)
+    free_tier_usage       = "${(var.enable_cloudwatch_dashboards ? 3 : 0) + (var.enable_enhanced_cloudwatch_dashboard ? 1 : 0)}/10 dashboards"
+    free_tier_percentage  = "${((var.enable_cloudwatch_dashboards ? 3 : 0) + (var.enable_enhanced_cloudwatch_dashboard ? 1 : 0)) * 10}% of free tier limit"
+  }
+}

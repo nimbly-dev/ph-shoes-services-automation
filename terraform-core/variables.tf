@@ -248,7 +248,7 @@ variable "frontend_memory_mb" {
 variable "backend_memory_mb" {
   description = "Memory allocation for backend services in MB"
   type        = number
-  default     = 456
+  default     = 400
 }
 
 variable "log_retention_days" {

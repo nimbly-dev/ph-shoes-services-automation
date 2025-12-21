@@ -112,7 +112,7 @@ jobs:
             echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
             echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
             echo "port=8080" >> $GITHUB_OUTPUT
-            echo "memory=456" >> $GITHUB_OUTPUT
+            echo "memory=400" >> $GITHUB_OUTPUT
             
             # Set service-specific host ports and container ports
             case "$SERVICE" in

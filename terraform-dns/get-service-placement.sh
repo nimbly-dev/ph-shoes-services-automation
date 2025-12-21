@@ -23,20 +23,11 @@ fi
 get_service_ip() {
   local service_pattern=$1
   
-  # Get task details for this service pattern
-  local task_info=$(aws ecs describe-tasks --cluster ph-shoes-services-ecs --tasks $TASKS \
-    --query "tasks[?contains(group, '$service_pattern')] | [0].{containerInstanceArn:containerInstanceArn,lastStatus:lastStatus}" --output json 2>/dev/null)
+  # Get container instance ARN for this specific service
+  local container_arn=$(aws ecs describe-tasks --cluster ph-shoes-services-ecs --tasks $TASKS \
+    --query "tasks[?contains(group, '$service_pattern')].containerInstanceArn | [0]" --output text 2>/dev/null)
   
-  if [ "$task_info" = "null" ] || [ -z "$task_info" ]; then
-    echo "$FALLBACK_IP"
-    return
-  fi
-  
-  # Extract container instance ARN
-  local container_arn=$(echo "$task_info" | grep -o '"containerInstanceArn":"[^"]*"' | cut -d'"' -f4)
-  local task_status=$(echo "$task_info" | grep -o '"lastStatus":"[^"]*"' | cut -d'"' -f4)
-  
-  if [ -z "$container_arn" ] || [ "$container_arn" = "null" ] || [ "$task_status" != "RUNNING" ]; then
+  if [ -z "$container_arn" ] || [ "$container_arn" = "None" ] || [ "$container_arn" = "null" ]; then
     echo "$FALLBACK_IP"
     return
   fi

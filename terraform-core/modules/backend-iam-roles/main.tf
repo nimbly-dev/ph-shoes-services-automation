@@ -91,3 +91,21 @@ resource "aws_iam_role_policy" "task_dynamodb" {
     }]
   })
 }
+
+resource "aws_iam_role_policy" "task_ses" {
+  name = "ses-send-access"
+  role = aws_iam_role.task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "ses:SendEmail",
+        "ses:SendRawEmail",
+        "ses:SendTemplatedEmail"
+      ]
+      Resource = "*"
+    }]
+  })
+}

@@ -19,6 +19,13 @@ data "aws_route53_zone" "frontend" {
 # Data source to get running tasks and their placement using external script
 data "external" "service_placement" {
   program = ["bash", "${path.module}/get-service-placement.sh"]
+  
+  # Add query parameters to force refresh when services change
+  query = {
+    # Force refresh by including current timestamp and task count
+    refresh_trigger = "${timestamp()}"
+    cluster_name = "ph-shoes-services-ecs"
+  }
 }
 
 # Route 53 records with smart service-to-instance routing (only when not using Cloudflare)

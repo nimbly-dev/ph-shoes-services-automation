@@ -11,7 +11,7 @@ ecs_cluster_name = "ph-shoes-services-ecs"
 
 # Memory allocation optimized for t3.micro constraints
 frontend_memory_mb = 128
-backend_memory_mb  = 456
+backend_memory_mb  = 400
 
 ecs_instance_ingress_rules = [
   {

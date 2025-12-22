@@ -1,4 +1,3 @@
-# CloudWatch Dashboards Module - Cost Optimized for Free Tier
 # Implements essential monitoring dashboards within AWS free tier limits
 
 locals {
@@ -53,7 +52,6 @@ resource "aws_cloudwatch_dashboard" "system_overview" {
           }
         }
       },
-      # Cost Tracking Widget (simplified)
       {
         type   = "metric"
         x      = 12
@@ -200,7 +198,6 @@ resource "aws_cloudwatch_dashboard" "service_performance" {
   })
 }
 
-# Infrastructure Dashboard - Cost optimized
 resource "aws_cloudwatch_dashboard" "infrastructure" {
   dashboard_name = "${var.cluster_name}-infrastructure"
 
@@ -245,7 +242,6 @@ resource "aws_cloudwatch_dashboard" "infrastructure" {
           stat   = "Average"
         }
       },
-      # Cost Tracking (Second Row)
       {
         type   = "metric"
         x      = 0
@@ -281,13 +277,13 @@ resource "aws_cloudwatch_dashboard" "infrastructure" {
   })
 }
 
-# Essential CloudWatch Insights Query - Cost Optimized (1 query only)
-resource "aws_cloudwatch_query_definition" "essential_errors" {
-  name = "${var.cluster_name}-essential-errors"
+
+resource "aws_cloudwatch_query_definition" "container_logs_access" {
+  name = "${var.cluster_name}-container-logs-access"
 
   log_group_names = [
     "/backend/user-accounts",
-    "/backend/catalog",
+    "/backend/catalog", 
     "/backend/alerts",
     "/backend/text-search",
     "/frontend"
@@ -295,9 +291,29 @@ resource "aws_cloudwatch_query_definition" "essential_errors" {
 
   query_string = <<EOF
 fields @timestamp, @message, @logStream
-| filter @message like /ERROR/ or @message like /Exception/ or @message like /Failed/
-| stats count() by @logStream
+| filter @timestamp > date_sub(now(), interval 2 hour)
 | sort @timestamp desc
-| limit 20
+| limit 100
 EOF
 }
+
+resource "aws_cloudwatch_query_definition" "ecs_deployment_events" {
+  name = "${var.cluster_name}-ecs-deployment-events"
+
+  log_group_names = [
+    "/backend/user-accounts",
+    "/backend/catalog",
+    "/backend/alerts", 
+    "/backend/text-search",
+    "/frontend"
+  ]
+
+  query_string = <<EOF
+fields @timestamp, @message, @logStream
+| filter @message like /startup|initialization|deployment|container|task|health/
+| filter @timestamp > date_sub(now(), interval 4 hour)
+| sort @timestamp desc
+| limit 50
+EOF
+}
+

@@ -1,52 +1,38 @@
-# Example Terraform Variables for Enhanced CloudWatch Dashboard
-# Copy this file to terraform.tfvars and customize the values
-
-# Basic Configuration
+# Example values
 aws_region   = "ap-southeast-1"
 environment  = "prod"
 project_name = "ph-shoes-services"
 
-# ECS Configuration
 ecs_cluster_name     = "ph-shoes-services-ecs"
 ecs_instance_type    = "t3.micro"
 ecs_desired_capacity = 1
 
-# CloudWatch Monitoring
-enable_cloudwatch_monitoring   = true
-enable_cloudwatch_dashboards   = true
-cloudwatch_alarm_email         = "your-email@example.com"
+enable_cloudwatch_monitoring = true
+enable_cloudwatch_dashboards = true
+cloudwatch_alarm_email       = "your-email@example.com"
 
-# Enhanced CloudWatch Dashboard Configuration
 enable_enhanced_cloudwatch_dashboard = true
+enhanced_dashboard_log_retention_days = 3
+enhanced_dashboard_refresh_interval   = 300
+enhanced_dashboard_max_widgets        = 32
+enhanced_dashboard_api_budget         = 2900
 
-# Free Tier Optimization Settings
-enhanced_dashboard_log_retention_days = 3     # 1-7 days (3 recommended for cost efficiency)
-enhanced_dashboard_refresh_interval   = 300   # 300 seconds (5 minutes minimum for free tier)
-enhanced_dashboard_max_widgets        = 32    # Maximum 50 for free tier compliance
-enhanced_dashboard_api_budget         = 2900  # Monthly API requests (max 10,000 for free tier)
+enable_enhanced_free_tier_monitoring = true
+enable_enhanced_security_monitoring  = true
+enable_enhanced_ecs_monitoring       = true
+enable_enhanced_query_optimization   = true
 
-# Feature Toggles
-enable_enhanced_free_tier_monitoring    = true
-enable_enhanced_security_monitoring     = true
-enable_enhanced_ecs_monitoring         = true
-enable_enhanced_query_optimization     = true
+enhanced_dashboard_log_sampling_rate = 1.0
+enable_cost_tracking                 = true
 
-# Advanced Settings
-enhanced_dashboard_log_sampling_rate = 1.0  # 1.0 = 100% sampling, 0.1 = 10% sampling
-
-# Cost Tracking
-enable_cost_tracking = true
-
-# Monitored Services
 monitored_services = [
   "ph-shoes-alerts-service-web",
-  "ph-shoes-catalog-service-web", 
+  "ph-shoes-catalog-service-web",
   "ph-shoes-text-search-service-web",
   "ph-shoes-user-accounts-service-web",
   "ph-shoes-data-spa-frontend"
 ]
 
-# GitHub Configuration (for CI/CD)
 github_owner = "your-github-org"
 github_repositories = [
   "ph-shoes-services-automation",
@@ -56,11 +42,3 @@ github_repositories = [
   "ph-shoes-user-accounts-service",
   "ph-shoes-search-services"
 ]
-
-# Free Tier Usage Summary (Reference Only - Calculated Automatically)
-# After deployment, the enhanced dashboard will provide:
-# - Dashboards: 4/10 (40% used) - 3 existing + 1 enhanced
-# - Metrics: 32/50 (64% used) - optimized widget design  
-# - API Requests: ~2900/month (29% used) - 5-minute refresh intervals
-# - Log Retention: 3 days (24% of 5GB limit) - cost-efficient retention
-# - Safety Margins: 60% dashboard buffer, 36% metrics buffer, 71% API buffer

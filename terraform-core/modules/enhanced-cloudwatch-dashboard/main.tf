@@ -508,7 +508,6 @@ resource "aws_cloudwatch_dashboard" "enhanced_observability" {
             view   = "table"
           }
         },
-        # Task Lifecycle Tracking (2 widgets)
         {
           type   = "log"
           x      = 12
@@ -617,7 +616,6 @@ resource "aws_cloudwatch_dashboard" "enhanced_observability" {
 }
 
 # CloudWatch Insights Query Library - Comprehensive query templates for enhanced observability
-# Optimized for free tier usage with efficient query patterns
 
 # Error Analysis Queries
 resource "aws_cloudwatch_query_definition" "critical_errors" {
@@ -860,7 +858,6 @@ fields @timestamp, @message, @logStream
 EOF
 }
 
-# Cost Optimization Features - Log retention management
 resource "aws_cloudwatch_log_group" "service_log_groups" {
   for_each = local.services
 

@@ -294,8 +294,6 @@ variable "monitored_services" {
     "ph-shoes-data-spa-frontend"
   ]
 }
-
-# CloudWatch Dashboards variables (Task 12.2)
 variable "enable_cloudwatch_dashboards" {
   description = "Enable comprehensive CloudWatch dashboards for system monitoring"
   type        = bool
@@ -400,5 +398,161 @@ variable "enhanced_dashboard_log_sampling_rate" {
     error_message = "Enhanced dashboard log sampling rate must be between 0 and 1."
   }
 }
+variable "enable_services_dashboard" {
+  description = "Enable the Services Dashboard for portfolio monitoring (focused on t3.micro memory and log access)"
+  type        = bool
+  default     = false
+}
+
+variable "services_dashboard_memory_normal_threshold" {
+  description = "Memory utilization threshold for normal (green) status indicator"
+  type        = number
+  default     = 70
+
+  validation {
+    condition     = var.services_dashboard_memory_normal_threshold > 0 && var.services_dashboard_memory_normal_threshold <= 100
+    error_message = "Services dashboard memory normal threshold must be between 0 and 100."
+  }
+}
+
+variable "services_dashboard_memory_warning_threshold" {
+  description = "Memory utilization threshold for warning (yellow) status indicator"
+  type        = number
+  default     = 80
+
+  validation {
+    condition     = var.services_dashboard_memory_warning_threshold > 0 && var.services_dashboard_memory_warning_threshold <= 100
+    error_message = "Services dashboard memory warning threshold must be between 0 and 100."
+  }
+}
+
+variable "services_dashboard_memory_critical_threshold" {
+  description = "Memory utilization threshold for critical (red) status indicator"
+  type        = number
+  default     = 95
+
+  validation {
+    condition     = var.services_dashboard_memory_critical_threshold > 0 && var.services_dashboard_memory_critical_threshold <= 100
+    error_message = "Services dashboard memory critical threshold must be between 0 and 100."
+  }
+}
+
+variable "services_dashboard_log_retention_days" {
+  description = "Log retention period in days for Services Dashboard (optimized for cost: 1-7 days)"
+  type        = number
+  default     = 3
+
+  validation {
+    condition     = var.services_dashboard_log_retention_days >= 1 && var.services_dashboard_log_retention_days <= 7
+    error_message = "Services dashboard log retention must be between 1 and 7 days for cost optimization."
+  }
+}
+
+variable "services_dashboard_refresh_interval" {
+  description = "Dashboard refresh interval in seconds (minimum 300 for API efficiency)"
+  type        = number
+  default     = 300
+
+  validation {
+    condition     = var.services_dashboard_refresh_interval >= 300
+    error_message = "Services dashboard refresh interval must be at least 300 seconds (5 minutes) for API efficiency."
+  }
+}
+
+variable "services_dashboard_on_demand_optimized" {
+  description = "Enable on-demand optimization for portfolio usage patterns (current session focus)"
+  type        = bool
+  default     = true
+}
+variable "enable_deployment_dashboard" {
+  description = "Enable the Deployment Dashboard for portfolio deployment monitoring (focused on ECS deployments and container startup)"
+  type        = bool
+  default     = false
+}
+
+variable "deployment_dashboard_timeout_minutes" {
+  description = "Maximum deployment time in minutes before considering failed"
+  type        = number
+  default     = 30
+
+  validation {
+    condition     = var.deployment_dashboard_timeout_minutes >= 10 && var.deployment_dashboard_timeout_minutes <= 60
+    error_message = "Deployment dashboard timeout must be between 10 and 60 minutes."
+  }
+}
+
+variable "deployment_dashboard_startup_timeout_minutes" {
+  description = "Maximum container startup time in minutes for deployment monitoring"
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.deployment_dashboard_startup_timeout_minutes >= 5 && var.deployment_dashboard_startup_timeout_minutes <= 30
+    error_message = "Deployment dashboard startup timeout must be between 5 and 30 minutes."
+  }
+}
+
+variable "deployment_dashboard_memory_startup_threshold" {
+  description = "Memory utilization threshold during startup (higher than normal operations)"
+  type        = number
+  default     = 90
+
+  validation {
+    condition     = var.deployment_dashboard_memory_startup_threshold >= 70 && var.deployment_dashboard_memory_startup_threshold <= 100
+    error_message = "Deployment dashboard memory startup threshold must be between 70 and 100 percent."
+  }
+}
+
+variable "deployment_dashboard_log_retention_days" {
+  description = "Log retention period in days for Deployment Dashboard (optimized for cost: 1-7 days)"
+  type        = number
+  default     = 3
+
+  validation {
+    condition     = var.deployment_dashboard_log_retention_days >= 1 && var.deployment_dashboard_log_retention_days <= 7
+    error_message = "Deployment dashboard log retention must be between 1 and 7 days for cost optimization."
+  }
+}
+
+variable "deployment_dashboard_refresh_interval" {
+  description = "Deployment dashboard refresh interval in seconds (minimum 300 for API efficiency)"
+  type        = number
+  default     = 300
+
+  validation {
+    condition     = var.deployment_dashboard_refresh_interval >= 300
+    error_message = "Deployment dashboard refresh interval must be at least 300 seconds (5 minutes) for API efficiency."
+  }
+}
+
+variable "deployment_dashboard_on_demand_optimized" {
+  description = "Enable on-demand optimization for portfolio deployment patterns (current session focus)"
+  type        = bool
+  default     = true
+}
+
+variable "deployment_dashboard_enable_alarms" {
+  description = "Enable deployment-related alarms (optional for portfolio projects)"
+  type        = bool
+  default     = false
+}
+variable "enable_simplified_cloudwatch_queries" {
+  description = "Enable simplified CloudWatch Insights queries for portfolio monitoring (replaces complex enhanced dashboard queries)"
+  type        = bool
+  default     = false
+}
+
+variable "simplified_queries_enable_startup_monitoring" {
+  description = "Enable container startup monitoring queries in simplified CloudWatch queries"
+  type        = bool
+  default     = true
+}
+
+variable "simplified_queries_enable_error_monitoring" {
+  description = "Enable simplified error log monitoring queries"
+  type        = bool
+  default     = true
+}
 
 # DNS configuration moved to separate terraform-dns module
+

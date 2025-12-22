@@ -1,33 +1,21 @@
 # PH Shoes Services Automation
 
-Infrastructure automation for PH Shoes microservices on AWS ECS.
-
-## Quick Start
-
-```bash
-# Deploy core infrastructure
-cd terraform-core && terraform init && terraform apply
-
-# Deploy DNS routing
-cd terraform-dns && terraform init && terraform apply
-
-# Deploy services via GitHub Actions workflows
-gh workflow run deploy-service.yml -f service_name=frontend -f image_tag=latest
-```
+Infrastructure automation for PH Shoes services on AWS ECS.
 
 ## Structure
+- `terraform-core/` - Core AWS infrastructure (ECS, VPC, IAM, monitoring).
+- `terraform-dns/` - DNS automation.
+- `.github/workflows/` - CI workflows for apply/deploy/stop.
+- `nginx-services.conf` - Nginx routing config.
 
-- `terraform-core/` - Core AWS infrastructure (ECS, VPC, IAM)
-- `terraform-dns/` - Smart DNS routing with service placement detection  
-- `.github/workflows/` - Deployment automation
-- `nginx-services.conf` - Nginx configuration for service routing
+## Apply and Deploy
+- `terraform-core`: use the approved workflow-based plan/apply (no local apply).
+- `terraform-dns`: `auto-dns-update.yml`.
+- Services: `deploy-service.yml`, `deploy-all-services.yml`.
+- Stop services: `stop-all.yml`.
 
-## Services
-
-- Frontend SPA (React)
-- User Accounts API
-- Catalog API  
-- Alerts API
-- Text Search API
-
-All services auto-scale to zero for cost optimization.
+Example:
+```bash
+# Deploy a single service
+gh workflow run deploy-service.yml -f service_name=frontend -f image_tag=latest
+```

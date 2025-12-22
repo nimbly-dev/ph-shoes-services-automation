@@ -27,7 +27,8 @@ output "dashboard_names" {
 output "query_definition_names" {
   description = "List of CloudWatch Insights query definition names"
   value = [
-    aws_cloudwatch_query_definition.essential_errors.name
+    aws_cloudwatch_query_definition.container_logs_access.name,
+    aws_cloudwatch_query_definition.ecs_deployment_events.name
   ]
 }
 

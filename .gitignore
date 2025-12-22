@@ -36,3 +36,4 @@ LICENSE.txt
 
 .terraform.lock.hcl
 *.tfstate*
+*.tfplan

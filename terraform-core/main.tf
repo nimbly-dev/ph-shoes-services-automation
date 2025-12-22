@@ -117,7 +117,6 @@ module "ecs_cluster" {
   tags                   = local.common_tags
 }
 
-# HTTP traffic rule (used by all services on port 80)
 resource "aws_security_group_rule" "frontend_http" {
   type              = "ingress"
   from_port         = 80
@@ -127,7 +126,6 @@ resource "aws_security_group_rule" "frontend_http" {
   security_group_id = module.ecs_cluster.instance_security_group_id
 }
 
-# Backend service ports (8081-8085) - for direct access and nginx upstream
 resource "aws_security_group_rule" "backend_services" {
   type              = "ingress"
   from_port         = 8081
@@ -137,26 +135,22 @@ resource "aws_security_group_rule" "backend_services" {
   security_group_id = module.ecs_cluster.instance_security_group_id
 }
 
-# Note: Port 80 (nginx proxy) security group rule already exists in the ECS cluster module
 
-# DNS management moved to separate terraform-dns module
 
-# CloudWatch Monitoring
 module "cloudwatch_monitoring" {
   count  = var.enable_cloudwatch_monitoring ? 1 : 0
   source = "./modules/cloudwatch-monitoring"
 
-  cluster_name     = var.ecs_cluster_name
-  service_names    = var.monitored_services
-  cpu_threshold    = var.cloudwatch_cpu_threshold
-  memory_threshold = var.cloudwatch_memory_threshold
-  alarm_email      = var.cloudwatch_alarm_email
-  tags             = local.common_tags
+  cluster_name           = var.ecs_cluster_name
+  autoscaling_group_name = module.ecs_cluster.autoscaling_group_name
+  service_names          = var.monitored_services
+  cpu_threshold          = var.cloudwatch_cpu_threshold
+  memory_threshold       = var.cloudwatch_memory_threshold
+  alarm_email            = var.cloudwatch_alarm_email
+  tags                   = local.common_tags
 
   depends_on = [module.ecs_cluster]
 }
-
-# CloudWatch Dashboards (Task 12.2)
 module "cloudwatch_dashboards" {
   count  = var.enable_cloudwatch_dashboards ? 1 : 0
   source = "./modules/cloudwatch-dashboards"
@@ -172,7 +166,6 @@ module "cloudwatch_dashboards" {
   depends_on = [module.ecs_cluster, module.cloudwatch_monitoring]
 }
 
-# Enhanced CloudWatch Dashboard - Comprehensive Observability Platform
 module "enhanced_cloudwatch_dashboard" {
   count  = var.enable_enhanced_cloudwatch_dashboard ? 1 : 0
   source = "./modules/enhanced-cloudwatch-dashboard"
@@ -182,14 +175,10 @@ module "enhanced_cloudwatch_dashboard" {
   autoscaling_group_name = module.ecs_cluster.autoscaling_group_name
   load_balancer_name     = var.enhanced_dashboard_load_balancer_name
   alarm_actions          = var.enable_cloudwatch_monitoring ? [module.cloudwatch_monitoring[0].sns_topic_arn] : []
-
-  # Free tier optimization settings
   log_retention_days         = var.enhanced_dashboard_log_retention_days
   dashboard_refresh_interval = var.enhanced_dashboard_refresh_interval
   max_widget_count           = var.enhanced_dashboard_max_widgets
   api_request_budget         = var.enhanced_dashboard_api_budget
-
-  # Feature toggles
   enable_cost_tracking             = var.enable_cost_tracking
   enable_free_tier_monitoring      = var.enable_enhanced_free_tier_monitoring
   enable_security_monitoring       = var.enable_enhanced_security_monitoring
@@ -201,5 +190,68 @@ module "enhanced_cloudwatch_dashboard" {
 
   depends_on = [module.ecs_cluster, module.cloudwatch_monitoring]
 }
+module "services_dashboard" {
+  count  = var.enable_services_dashboard ? 1 : 0
+  source = "./modules/services-dashboard"
+
+  cluster_name           = var.ecs_cluster_name
+  service_names          = var.monitored_services
+  autoscaling_group_name = module.ecs_cluster.autoscaling_group_name
+  memory_thresholds = {
+    normal   = var.services_dashboard_memory_normal_threshold
+    warning  = var.services_dashboard_memory_warning_threshold
+    critical = var.services_dashboard_memory_critical_threshold
+  }
+  log_retention_days         = var.services_dashboard_log_retention_days
+  dashboard_refresh_interval = var.services_dashboard_refresh_interval
+  on_demand_optimized        = var.services_dashboard_on_demand_optimized
+
+  tags = local.common_tags
+
+  depends_on = [module.ecs_cluster]
+}
+module "deployment_dashboard" {
+  count  = var.enable_deployment_dashboard ? 1 : 0
+  source = "./modules/deployment-dashboard"
+
+  cluster_name           = var.ecs_cluster_name
+  service_names          = var.monitored_services
+  autoscaling_group_name = module.ecs_cluster.autoscaling_group_name
+  deployment_timeout_minutes = var.deployment_dashboard_timeout_minutes
+  startup_timeout_minutes    = var.deployment_dashboard_startup_timeout_minutes
+  memory_startup_threshold   = var.deployment_dashboard_memory_startup_threshold
+  log_retention_days         = var.deployment_dashboard_log_retention_days
+  dashboard_refresh_interval = var.deployment_dashboard_refresh_interval
+  on_demand_optimized        = var.deployment_dashboard_on_demand_optimized
+  enable_deployment_alarms   = var.deployment_dashboard_enable_alarms
+
+  tags = local.common_tags
+
+  depends_on = [module.ecs_cluster]
+}
+module "log_retention_management" {
+  source = "./modules/log-retention-management"
+
+  cluster_name        = var.ecs_cluster_name
+  log_retention_days  = var.log_retention_days
+  on_demand_optimized = true
+  tags                = local.common_tags
+}
+module "simplified_cloudwatch_queries" {
+  count  = var.enable_simplified_cloudwatch_queries ? 1 : 0
+  source = "./modules/simplified-cloudwatch-queries"
+
+  cluster_name = var.ecs_cluster_name
+  log_retention_days        = var.log_retention_days
+  enable_startup_monitoring = var.simplified_queries_enable_startup_monitoring
+  enable_error_monitoring   = var.simplified_queries_enable_error_monitoring
+
+  tags = local.common_tags
+
+  depends_on = [module.ecs_cluster]
+}
+
+
+
 
 

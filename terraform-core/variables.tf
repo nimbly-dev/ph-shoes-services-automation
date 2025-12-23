@@ -206,7 +206,6 @@ variable "ecs_max_size" {
 
 variable "ecs_desired_capacity" {
   type    = number
-  default = 1
 }
 
 variable "ecs_instance_key_name" {

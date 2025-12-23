@@ -2,6 +2,15 @@ name: Start ECS Cluster (Baseline Capacity)
 
 on:
   workflow_dispatch:
+    inputs:
+      desired_capacity:
+        description: "ASG desired capacity"
+        required: true
+        default: "3"
+      min_size:
+        description: "ASG minimum size"
+        required: true
+        default: "1"
 
 permissions:
   contents: read
@@ -19,16 +28,25 @@ jobs:
 
       - name: Set ASG baseline capacity
         run: |
+          if ! [[ "${{ github.event.inputs.desired_capacity }}" =~ ^[0-9]+$ ]]; then
+            echo "desired_capacity must be a non-negative integer."
+            exit 1
+          fi
+          if ! [[ "${{ github.event.inputs.min_size }}" =~ ^[0-9]+$ ]]; then
+            echo "min_size must be a non-negative integer."
+            exit 1
+          fi
           echo "Setting ASG baseline capacity..."
           aws autoscaling update-auto-scaling-group \
             --auto-scaling-group-name ph-shoes-services-ecs-asg \
-            --min-size 1 \
-            --desired-capacity 3 \
+            --min-size ${{ github.event.inputs.min_size }} \
+            --desired-capacity ${{ github.event.inputs.desired_capacity }} \
             --region ap-southeast-1
 
       - name: Wait for EC2 instances to be ready
         run: |
           echo "Waiting for ASG instances to be InService and healthy..."
+          TARGET_DESIRED="${{ github.event.inputs.desired_capacity }}"
           for attempt in {1..30}; do
             INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
               --auto-scaling-group-names ph-shoes-services-ecs-asg \
@@ -50,12 +68,12 @@ jobs:
 
             READY_COUNT=$(echo "$STATUS_SUMMARY" | jq '[.[] | select(.State=="running" and .Instance=="ok" and .System=="ok")] | length')
 
-            if [ "$READY_COUNT" -ge 3 ]; then
-              echo "EC2 instances are ready ($READY_COUNT/3). Workflow complete."
+            if [ "$READY_COUNT" -ge "$TARGET_DESIRED" ]; then
+              echo "EC2 instances are ready ($READY_COUNT/$TARGET_DESIRED). Workflow complete."
               exit 0
             fi
 
-            echo "Instances not ready yet ($READY_COUNT/3) (attempt $attempt/30)."
+            echo "Instances not ready yet ($READY_COUNT/$TARGET_DESIRED) (attempt $attempt/30)."
             sleep 20
           done
 

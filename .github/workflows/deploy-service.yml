@@ -112,7 +112,7 @@ jobs:
             echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
             echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
             echo "port=8080" >> $GITHUB_OUTPUT
-            echo "memory=400" >> $GITHUB_OUTPUT
+            echo "memory=300" >> $GITHUB_OUTPUT
             
             # Set service-specific host ports and container ports
             case "$SERVICE" in
@@ -130,21 +130,52 @@ jobs:
               text-search) SERVER_PORT="8084" ;;
               *) SERVER_PORT="8080" ;;
             esac
-            
+
+            # Preserve existing image defaults while applying JVM right-sizing
+            case "$SERVICE" in
+              catalog) JAVA_TOOL_OPTIONS="--add-opens=java.base/java.nio=ALL-UNNAMED -Dsnowflake.jdbc.enableArrow=false -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -XX:MaxRAMPercentage=70.0 -XX:+UseSerialGC -Xss256k" ;;
+              *) JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -XX:MaxRAMPercentage=70.0 -XX:+UseSerialGC -Xss256k" ;;
+            esac
+
             jq -n \
               --arg app_env "${{ env.APP_ENV }}" \
               --arg app_version "${{ env.APP_VERSION }}" \
               --arg aws_region "${{ env.AWS_REGION }}" \
               --arg server_port "$SERVER_PORT" \
+              --arg port "$SERVER_PORT" \
               --arg spring_profiles "${{ secrets.SPRING_PROFILES_ACTIVE }}" \
+              --arg java_tool_options "$JAVA_TOOL_OPTIONS" \
               --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
               --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
+              --arg datasource_driver_class_name "${{ vars.SPRING_DATASOURCE_DRIVER_CLASS_NAME }}" \
               --arg snowflake_account "${{ secrets.SNOWFLAKE_ACCOUNT }}" \
               --arg snowflake_warehouse "${{ secrets.SNOWFLAKE_WAREHOUSE }}" \
               --arg snowflake_database "${{ secrets.SNOWFLAKE_DATABASE }}" \
               --arg snowflake_schema "${{ secrets.SNOWFLAKE_SCHEMA }}" \
               --arg snowflake_role "${{ secrets.SNOWFLAKE_ROLE }}" \
               --arg snowflake_token "${{ secrets.SNOWFLAKE_TOKEN }}" \
+              --arg log_level_root "${{ vars.LOG_LEVEL_ROOT }}" \
+              --arg spring_jpa_show_sql "${{ vars.SPRING_JPA_SHOW_SQL }}" \
+              --arg cors_allowed_origins "${{ vars.CORS_ALLOWED_ORIGINS }}" \
+              --arg cors_allowed_methods "${{ vars.CORS_ALLOWED_METHODS }}" \
+              --arg cors_allowed_headers "${{ vars.CORS_ALLOWED_HEADERS }}" \
+              --arg cors_allow_credentials "${{ vars.CORS_ALLOW_CREDENTIALS }}" \
+              --arg cors_max_age "${{ vars.CORS_MAX_AGE }}" \
+              --arg db_pool_max_size "${{ vars.DB_POOL_MAX_SIZE }}" \
+              --arg db_pool_min_idle "${{ vars.DB_POOL_MIN_IDLE }}" \
+              --arg db_pool_idle_timeout "${{ vars.DB_POOL_IDLE_TIMEOUT }}" \
+              --arg db_pool_connection_timeout "${{ vars.DB_POOL_CONNECTION_TIMEOUT }}" \
+              --arg db_pool_init_fail_timeout "${{ vars.DB_POOL_INIT_FAIL_TIMEOUT }}" \
+              --arg snowflake_enable_arrow_resultset "${{ vars.SNOWFLAKE_ENABLE_ARROW_RESULTSET }}" \
+              --arg phshoes_security_email_enabled "${{ vars.PHSHOES_SECURITY_EMAIL_ENABLED }}" \
+              --arg rate_limit_enabled "${{ vars.PHSHOES_API_RATE_LIMIT_ENABLED }}" \
+              --arg rate_limit_window "${{ vars.PHSHOES_API_RATE_LIMIT_WINDOW }}" \
+              --arg rate_limit_global_enabled "${{ vars.PHSHOES_API_RATE_LIMIT_GLOBAL_ENABLED }}" \
+              --arg rate_limit_global_limit "${{ vars.PHSHOES_API_RATE_LIMIT_GLOBAL_LIMIT }}" \
+              --arg rate_limit_per_ip_enabled "${{ vars.PHSHOES_API_RATE_LIMIT_PER_IP_ENABLED }}" \
+              --arg rate_limit_per_ip_limit "${{ vars.PHSHOES_API_RATE_LIMIT_PER_IP_LIMIT }}" \
+              --arg rate_limit_per_user_enabled "${{ vars.PHSHOES_API_RATE_LIMIT_PER_USER_ENABLED }}" \
+              --arg rate_limit_per_user_limit "${{ vars.PHSHOES_API_RATE_LIMIT_PER_USER_LIMIT }}" \
               --arg hmac_pepper_b64 "${{ secrets.HMAC_PEPPER_B64 }}" \
               --arg aes_key_b64 "${{ secrets.AES_KEY_B64 }}" \
               --arg hmac_legacy_peppers_b64 "${{ secrets.HMAC_LEGACY_PEPPERS_B64 }}" \
@@ -157,15 +188,42 @@ jobs:
                 "APP_VERSION": $app_version,
                 "AWS_REGION": $aws_region,
                 "SERVER_PORT": $server_port,
+                "PORT": $port,
                 "SPRING_PROFILES_ACTIVE": $spring_profiles,
+                "JAVA_TOOL_OPTIONS": $java_tool_options,
+                "SERVER_TOMCAT_THREADS_MAX": "10",
+                "SPRING_MAIN_LAZY_INITIALIZATION": "true",
                 "SPRING_DATASOURCE_USERNAME": $datasource_username,
                 "SPRING_DATASOURCE_PASSWORD": $datasource_password,
+                "SPRING_DATASOURCE_DRIVER_CLASS_NAME": $datasource_driver_class_name,
                 "SNOWFLAKE_ACCOUNT": $snowflake_account,
                 "SNOWFLAKE_WAREHOUSE": $snowflake_warehouse,
                 "SNOWFLAKE_DATABASE": $snowflake_database,
                 "SNOWFLAKE_SCHEMA": $snowflake_schema,
                 "SNOWFLAKE_ROLE": $snowflake_role,
                 "SNOWFLAKE_TOKEN": $snowflake_token,
+                "LOG_LEVEL_ROOT": $log_level_root,
+                "SPRING_JPA_SHOW_SQL": $spring_jpa_show_sql,
+                "CORS_ALLOWED_ORIGINS": $cors_allowed_origins,
+                "CORS_ALLOWED_METHODS": $cors_allowed_methods,
+                "CORS_ALLOWED_HEADERS": $cors_allowed_headers,
+                "CORS_ALLOW_CREDENTIALS": $cors_allow_credentials,
+                "CORS_MAX_AGE": $cors_max_age,
+                "DB_POOL_MAX_SIZE": $db_pool_max_size,
+                "DB_POOL_MIN_IDLE": $db_pool_min_idle,
+                "DB_POOL_IDLE_TIMEOUT": $db_pool_idle_timeout,
+                "DB_POOL_CONNECTION_TIMEOUT": $db_pool_connection_timeout,
+                "DB_POOL_INIT_FAIL_TIMEOUT": $db_pool_init_fail_timeout,
+                "SNOWFLAKE_ENABLE_ARROW_RESULTSET": $snowflake_enable_arrow_resultset,
+                "PHSHOES_SECURITY_EMAIL_ENABLED": $phshoes_security_email_enabled,
+                "PHSHOES_API_RATE_LIMIT_ENABLED": $rate_limit_enabled,
+                "PHSHOES_API_RATE_LIMIT_WINDOW": $rate_limit_window,
+                "PHSHOES_API_RATE_LIMIT_GLOBAL_ENABLED": $rate_limit_global_enabled,
+                "PHSHOES_API_RATE_LIMIT_GLOBAL_LIMIT": $rate_limit_global_limit,
+                "PHSHOES_API_RATE_LIMIT_PER_IP_ENABLED": $rate_limit_per_ip_enabled,
+                "PHSHOES_API_RATE_LIMIT_PER_IP_LIMIT": $rate_limit_per_ip_limit,
+                "PHSHOES_API_RATE_LIMIT_PER_USER_ENABLED": $rate_limit_per_user_enabled,
+                "PHSHOES_API_RATE_LIMIT_PER_USER_LIMIT": $rate_limit_per_user_limit,
                 "HMAC_PEPPER_B64": $hmac_pepper_b64,
                 "AES_KEY_B64": $aes_key_b64,
                 "HMAC_LEGACY_PEPPERS_B64": $hmac_legacy_peppers_b64,

@@ -147,7 +147,7 @@ jobs:
               --arg java_tool_options "$JAVA_TOOL_OPTIONS" \
               --arg datasource_username "${{ secrets.SPRING_DATASOURCE_USERNAME }}" \
               --arg datasource_password "${{ secrets.SPRING_DATASOURCE_PASSWORD }}" \
-              --arg datasource_driver_class_name "${{ vars.SPRING_DATASOURCE_DRIVER_CLASS_NAME }}" \
+              --arg datasource_driver_class_name "${{ secrets.SPRING_DATASOURCE_DRIVER_CLASS_NAME }}" \
               --arg snowflake_account "${{ secrets.SNOWFLAKE_ACCOUNT }}" \
               --arg snowflake_warehouse "${{ secrets.SNOWFLAKE_WAREHOUSE }}" \
               --arg snowflake_database "${{ secrets.SNOWFLAKE_DATABASE }}" \

@@ -137,7 +137,7 @@ jobs:
               *) JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -XX:MaxRAMPercentage=70.0 -XX:+UseSerialGC -Xss256k" ;;
             esac
 
-            SPRING_JPA_SHOW_SQL_VALUE="${{ vars.SPRING_JPA_SHOW_SQL }}"
+            SPRING_JPA_SHOW_SQL_VALUE="${{ secrets.SPRING_JPA_SHOW_SQL }}"
             if [ -z "$SPRING_JPA_SHOW_SQL_VALUE" ] || [ "$SPRING_JPA_SHOW_SQL_VALUE" = "null" ]; then
               SPRING_JPA_SHOW_SQL_VALUE="false"
             fi

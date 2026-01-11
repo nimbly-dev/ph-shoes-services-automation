@@ -133,8 +133,8 @@ jobs:
 
             # Preserve existing image defaults while applying JVM right-sizing
             case "$SERVICE" in
-              catalog) JAVA_TOOL_OPTIONS="--add-opens=java.base/java.nio=ALL-UNNAMED -Dsnowflake.jdbc.enableArrow=false -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -XX:MaxRAMPercentage=70.0 -XX:+UseSerialGC -Xss256k" ;;
-              *) JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -XX:MaxRAMPercentage=70.0 -XX:+UseSerialGC -Xss256k" ;;
+              catalog) JAVA_TOOL_OPTIONS="--add-opens=java.base/java.nio=ALL-UNNAMED -Dsnowflake.jdbc.enableArrow=false -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -XX:MaxRAMPercentage=60.0 -XX:+UseSerialGC -Xss256k -XX:ActiveProcessorCount=1" ;;
+              *) JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -XX:MaxRAMPercentage=60.0 -XX:+UseSerialGC -Xss256k -XX:ActiveProcessorCount=1" ;;
             esac
 
             SPRING_JPA_SHOW_SQL_VALUE="${{ secrets.SPRING_JPA_SHOW_SQL }}"

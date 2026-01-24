@@ -20,6 +20,27 @@ locals {
     local.backend_repo_objects,
     var.additional_ecr_repositories,
   )
+
+  extraction_account_tags = {
+    Project = var.extraction_project_tag
+    Service = var.extraction_service_name
+    Env     = var.extraction_env_tag
+  }
+
+  extraction_tags = merge(
+    {
+      Project   = var.extraction_project_tag
+      Service   = var.extraction_service_name
+      Env       = var.extraction_env_tag
+      ManagedBy = "terraform"
+    },
+    var.extraction_extra_tags
+  )
+
+  extraction_tags_with_app = merge(
+    local.extraction_tags,
+    { Application = var.extraction_app_name }
+  )
 }
 
 module "state_backend" {
@@ -249,6 +270,80 @@ module "simplified_cloudwatch_queries" {
   tags = local.common_tags
 
   depends_on = [module.ecs_cluster]
+}
+
+module "account_iam" {
+  source = "./dynamodb"
+
+  aws_region   = var.aws_region
+  service_name = var.extraction_service_name
+  project_tag  = var.extraction_project_tag
+  env_tag      = var.extraction_env_tag
+
+  runtime            = var.extraction_runtime
+  allow_table_delete = var.extraction_allow_table_delete
+
+  tags = local.extraction_account_tags
+}
+
+module "ses_send" {
+  source              = "./ses"
+  aws_region          = var.aws_region
+  service_name        = var.extraction_service_name
+  attach_to_role_name = module.account_iam.role_name
+  restrict_to_region  = true
+  enable_event_destination = var.extraction_ses_enable_event_destination
+  configuration_set_name   = var.extraction_ses_configuration_set_name
+  event_destination_name   = var.extraction_ses_event_destination_name
+  sns_topic_name           = var.extraction_ses_sns_topic_name
+  webhook_endpoint         = var.extraction_ses_webhook_endpoint
+  matching_event_types     = var.extraction_ses_matching_event_types
+  tags                     = local.extraction_tags_with_app
+}
+
+module "domain" {
+  source = "./domain"
+
+  zone_name         = var.extraction_domain_zone_name
+  render_www_target = var.extraction_render_www_target
+  create_root_a     = var.extraction_create_root_a
+  root_a_ip         = var.extraction_root_a_ip
+  additional_cnames = var.extraction_additional_cnames
+
+  manage_ses = var.extraction_manage_ses
+  ses_domain = var.extraction_ses_domain
+
+  create_mail_from    = var.extraction_create_mail_from
+  mail_from_subdomain = var.extraction_mail_from_subdomain
+
+  tags = local.extraction_tags
+}
+
+module "user_accounts_service_iam" {
+  source      = "./user_accounts_service_iam"
+  name_prefix = var.extraction_accounts_service_name_prefix
+  env         = var.extraction_env_tag
+  aws_region  = var.aws_region
+
+  project_tag = var.extraction_project_tag
+  env_tag     = var.extraction_env_tag
+
+  ses_from_address    = var.extraction_accounts_service_ses_from_address
+  create_access_key   = var.extraction_accounts_service_create_access_key
+  include_env_in_name = var.extraction_accounts_service_include_env_in_name
+  name_override       = var.extraction_accounts_service_name_override
+  tags                = local.extraction_tags
+}
+
+module "migration_versions_table" {
+  source = "./migration_versions_table"
+
+  table_name                    = var.extraction_migrations_table_name
+  billing_mode                  = var.extraction_migration_table_billing_mode
+  read_capacity                 = var.extraction_migration_table_read_capacity
+  write_capacity                = var.extraction_migration_table_write_capacity
+  enable_point_in_time_recovery = var.extraction_migration_table_enable_point_in_time_recovery
+  tags                           = local.extraction_tags
 }
 
 

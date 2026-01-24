@@ -1,6 +1,6 @@
 # PH Shoes Services Automation
 
-Infrastructure automation for PH Shoes services on AWS ECS.
+Infrastructure automation for PH Shoes web/frontend services on AWS ECS.
 
 ## Structure
 - `terraform-core/` - Core AWS infrastructure (ECS, VPC, IAM, monitoring).

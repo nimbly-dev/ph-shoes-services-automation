@@ -555,3 +555,206 @@ variable "simplified_queries_enable_error_monitoring" {
 
 # DNS configuration moved to separate terraform-dns module
 
+# Extraction automation service-related settings (migrated from extraction repo)
+variable "extraction_app_name" {
+  description = "Application tag for extraction-related service resources"
+  type        = string
+  default     = "ph-shoes-scrapper-project"
+}
+
+variable "extraction_environment" {
+  description = "Environment label for extraction-related service resources"
+  type        = string
+  default     = "dev"
+}
+
+variable "extraction_project_tag" {
+  description = "Project tag required on service-related resources"
+  type        = string
+  default     = "PH-Shoes"
+}
+
+variable "extraction_service_name" {
+  description = "Service name used for IAM policy naming"
+  type        = string
+  default     = "ph-shoes-account-service"
+}
+
+variable "extraction_env_tag" {
+  description = "Environment tag value required by ResourceTag conditions"
+  type        = string
+  default     = "dev"
+}
+
+variable "extraction_extra_tags" {
+  description = "Additional tags for extraction-related service resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "extraction_runtime" {
+  description = "Where the service IAM role is assumed: ecs | ec2 | lambda"
+  type        = string
+  default     = "ecs"
+  validation {
+    condition     = contains(["ecs", "ec2", "lambda"], var.extraction_runtime)
+    error_message = "extraction_runtime must be one of: ecs, ec2, lambda."
+  }
+}
+
+variable "extraction_allow_table_delete" {
+  description = "Allow DeleteTable for extraction-related service IAM role"
+  type        = bool
+  default     = false
+}
+
+variable "extraction_ses_enable_event_destination" {
+  description = "Set to true to provision SES configuration set + SNS event destination."
+  type        = bool
+  default     = false
+}
+
+variable "extraction_ses_configuration_set_name" {
+  description = "Name of the SES configuration set to create."
+  type        = string
+  default     = ""
+}
+
+variable "extraction_ses_event_destination_name" {
+  description = "Name for the SES event destination."
+  type        = string
+  default     = "sns-event-destination"
+}
+
+variable "extraction_ses_sns_topic_name" {
+  description = "SNS topic name that receives SES events."
+  type        = string
+  default     = ""
+}
+
+variable "extraction_ses_webhook_endpoint" {
+  description = "HTTPS endpoint subscribed to the SNS topic (e.g., user-accounts SES webhook)."
+  type        = string
+  default     = ""
+}
+
+variable "extraction_ses_matching_event_types" {
+  description = "SES event types to forward to SNS."
+  type        = list(string)
+  default     = ["BOUNCE", "COMPLAINT"]
+}
+
+variable "extraction_accounts_service_name_prefix" {
+  description = "Prefix for naming the user-accounts IAM resources."
+  type        = string
+  default     = "ph-shoes"
+}
+
+variable "extraction_accounts_service_ses_from_address" {
+  description = "Verified SES From address used by the user-accounts service."
+  type        = string
+  default     = "no-reply@ph-shoes.app"
+}
+
+variable "extraction_accounts_service_create_access_key" {
+  description = "Whether to create an IAM access key for the service user."
+  type        = bool
+  default     = true
+}
+
+variable "extraction_accounts_service_include_env_in_name" {
+  description = "Append -<env> to IAM resource names for the accounts service."
+  type        = bool
+  default     = false
+}
+
+variable "extraction_accounts_service_name_override" {
+  description = "Hard override for the IAM user name (leave blank for auto naming)."
+  type        = string
+  default     = ""
+}
+
+variable "extraction_migrations_table_name" {
+  description = "DynamoDB table that stores schema migration versions"
+  type        = string
+  default     = "migration_versions"
+}
+
+variable "extraction_migration_table_billing_mode" {
+  description = "Billing mode for the migration versions table."
+  type        = string
+  default     = "PAY_PER_REQUEST"
+}
+
+variable "extraction_migration_table_read_capacity" {
+  description = "Read capacity (used only when billing mode is PROVISIONED)."
+  type        = number
+  default     = 1
+}
+
+variable "extraction_migration_table_write_capacity" {
+  description = "Write capacity (used only when billing mode is PROVISIONED)."
+  type        = number
+  default     = 1
+}
+
+variable "extraction_migration_table_enable_point_in_time_recovery" {
+  description = "Enable point-in-time recovery backups for the migration table."
+  type        = bool
+  default     = true
+}
+
+variable "extraction_domain_zone_name" {
+  description = "Route 53 hosted zone name (e.g., phshoesproject.com)."
+  type        = string
+  default     = "phshoesproject.com"
+}
+
+variable "extraction_render_www_target" {
+  description = "Render frontend hostname for www CNAME."
+  type        = string
+  default     = "ph-shoes-frontend.onrender.com"
+}
+
+variable "extraction_create_root_a" {
+  description = "Create apex A record pointing to Render fallback IP."
+  type        = bool
+  default     = true
+}
+
+variable "extraction_root_a_ip" {
+  description = "IPv4 address for apex/root A record."
+  type        = string
+  default     = "216.24.57.1"
+}
+
+variable "extraction_additional_cnames" {
+  description = "Optional additional CNAMEs for the zone."
+  type        = map(string)
+  default     = {}
+}
+
+variable "extraction_manage_ses" {
+  description = "Whether to create SES domain identity + DKIM records."
+  type        = bool
+  default     = true
+}
+
+variable "extraction_ses_domain" {
+  description = "Domain to verify with SES (defaults to zone name when empty)."
+  type        = string
+  default     = ""
+}
+
+variable "extraction_create_mail_from" {
+  description = "Whether to configure MAIL FROM subdomain."
+  type        = bool
+  default     = false
+}
+
+variable "extraction_mail_from_subdomain" {
+  description = "MAIL FROM subdomain (only used when create_mail_from = true)."
+  type        = string
+  default     = "mail"
+}
+

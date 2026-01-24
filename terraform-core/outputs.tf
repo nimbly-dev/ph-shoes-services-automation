@@ -318,3 +318,39 @@ output "portfolio_monitoring_optimization_summary" {
     task_7_status = var.enable_simplified_cloudwatch_queries ? "COMPLETED" : "NOT ENABLED"
   }
 }
+
+# Service-related outputs migrated from extraction automation
+output "account_role_name" {
+  description = "IAM role name for the account service"
+  value       = module.account_iam.role_name
+}
+
+output "account_role_arn" {
+  description = "IAM role ARN for the account service"
+  value       = module.account_iam.role_arn
+}
+
+output "account_policy_arn" {
+  description = "IAM policy ARN for the account service"
+  value       = module.account_iam.policy_arn
+}
+
+output "accounts_service_access_key_id" {
+  value     = module.user_accounts_service_iam.access_key_id
+  sensitive = true
+}
+
+output "accounts_service_secret_access_key" {
+  value     = module.user_accounts_service_iam.secret_access_key
+  sensitive = true
+}
+
+output "migration_versions_table_name" {
+  description = "DynamoDB table used for schema migration bookkeeping"
+  value       = module.migration_versions_table.table_name
+}
+
+output "migration_versions_table_arn" {
+  description = "ARN of the schema migration versions table"
+  value       = module.migration_versions_table.table_arn
+}

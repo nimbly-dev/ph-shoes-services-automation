@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Get all running tasks
 TASKS=$(aws ecs list-tasks --cluster ph-shoes-services-ecs --desired-status RUNNING --query "taskArns[*]" --output text)
@@ -8,10 +8,15 @@ TASKS=$(aws ecs list-tasks --cluster ph-shoes-services-ecs --desired-status RUNN
 get_fallback_ip() {
   aws ec2 describe-instances \
     --filters "Name=tag:aws:autoscaling:groupName,Values=ph-shoes-services-ecs-asg" "Name=instance-state-name,Values=running" \
-    --query "Reservations[0].Instances[0].PublicIpAddress" --output text 2>/dev/null || echo "54.254.31.158"
+    --query "Reservations[0].Instances[0].PublicIpAddress" --output text 2>/dev/null
 }
 
 FALLBACK_IP=$(get_fallback_ip)
+if [ -z "$FALLBACK_IP" ] || [ "$FALLBACK_IP" = "None" ] || [ "$FALLBACK_IP" = "null" ]; then
+  echo "ERROR: Unable to determine fallback IP from running ECS instances." >&2
+  echo "ERROR: Aborting DNS update to avoid overwriting records with a stale/default IP." >&2
+  exit 1
+fi
 
 if [ -z "$TASKS" ] || [ "$TASKS" = "None" ]; then
   # No tasks running - use fallback for all services

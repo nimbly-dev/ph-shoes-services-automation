@@ -92,14 +92,30 @@ jobs:
           else
             echo "❌ No container instances found - ECS cluster may be scaled down"
           fi
+      
+      - name: Skip DNS update when cluster is scaled to zero
+        run: |
+          INSTANCE_COUNT=$(aws ecs list-container-instances \
+            --cluster ph-shoes-services-ecs \
+            --query "length(containerInstanceArns)" \
+            --output text)
+          
+          if [ "$INSTANCE_COUNT" = "0" ]; then
+            echo "SKIP_DNS=true" >> $GITHUB_ENV
+            echo "⚠️ No ECS instances running. Skipping DNS update for this run."
+          else
+            echo "SKIP_DNS=false" >> $GITHUB_ENV
+          fi
 
       - name: Terraform Init
+        if: env.SKIP_DNS != 'true'
         working-directory: terraform-dns
         run: |
           echo "🔧 Initializing Terraform..."
           terraform init
 
       - name: Terraform Plan
+        if: env.SKIP_DNS != 'true'
         working-directory: terraform-dns
         env:
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -120,7 +136,7 @@ jobs:
           fi
 
       - name: Terraform Apply
-        if: github.event.inputs.action == 'apply' || github.event.inputs.action == '' || github.event_name == 'repository_dispatch' || github.event_name == 'schedule'
+        if: env.SKIP_DNS != 'true' && (github.event.inputs.action == 'apply' || github.event.inputs.action == '' || github.event_name == 'repository_dispatch' || github.event_name == 'schedule')
         working-directory: terraform-dns
         env:
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -132,7 +148,7 @@ jobs:
           echo "✅ DNS changes applied successfully"
 
       - name: Terraform Destroy
-        if: github.event.inputs.action == 'destroy'
+        if: env.SKIP_DNS != 'true' && github.event.inputs.action == 'destroy'
         working-directory: terraform-dns
         env:
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -144,7 +160,7 @@ jobs:
           echo "✅ DNS records destroyed"
 
       - name: Test DNS Resolution
-        if: github.event.inputs.action == 'apply' || github.event.inputs.action == '' || github.event_name == 'repository_dispatch' || github.event_name == 'schedule'
+        if: env.SKIP_DNS != 'true' && (github.event.inputs.action == 'apply' || github.event.inputs.action == '' || github.event_name == 'repository_dispatch' || github.event_name == 'schedule')
         run: |
           echo "🌐 Testing DNS resolution after changes..."
           
@@ -171,7 +187,7 @@ jobs:
           done
 
       - name: Test Service Endpoints
-        if: github.event.inputs.action == 'apply' || github.event.inputs.action == '' || github.event_name == 'repository_dispatch' || github.event_name == 'schedule'
+        if: env.SKIP_DNS != 'true' && (github.event.inputs.action == 'apply' || github.event.inputs.action == '' || github.event_name == 'repository_dispatch' || github.event_name == 'schedule')
         continue-on-error: true  # Allow workflow to continue even if services return errors
         run: |
           echo "🔍 Testing service endpoints after DNS update..."

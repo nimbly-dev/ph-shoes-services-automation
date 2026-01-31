@@ -98,6 +98,7 @@ jobs:
             echo "port=80" >> $GITHUB_OUTPUT
             echo "host_port=8080" >> $GITHUB_OUTPUT
             echo "memory=128" >> $GITHUB_OUTPUT
+            echo "cpu=1024" >> $GITHUB_OUTPUT
             
             # Frontend environment (minimal)
             jq -n \
@@ -112,7 +113,8 @@ jobs:
             echo "exec_role=${{ secrets.BACKEND_EXEC_ROLE_ARN }}" >> $GITHUB_OUTPUT
             echo "task_role=${{ secrets.BACKEND_TASK_ROLE_ARN }}" >> $GITHUB_OUTPUT
             echo "port=8080" >> $GITHUB_OUTPUT
-            echo "memory=300" >> $GITHUB_OUTPUT
+            echo "memory=512" >> $GITHUB_OUTPUT
+            echo "cpu=1024" >> $GITHUB_OUTPUT
             
             # Set service-specific host ports and container ports
             case "$SERVICE" in
@@ -251,6 +253,7 @@ jobs:
           TF_VAR_container_image: ${{ env.IMAGE_URI }}
           TF_VAR_container_port: ${{ steps.secrets.outputs.port }}
           TF_VAR_host_port: ${{ steps.secrets.outputs.host_port }}
+          TF_VAR_cpu: ${{ steps.secrets.outputs.cpu }}
           TF_VAR_memory: ${{ steps.secrets.outputs.memory }}
           TF_VAR_desired_count: ${{ env.DESIRED_COUNT }}
           TF_VAR_log_group_name: ${{ steps.secrets.outputs.log_group }}

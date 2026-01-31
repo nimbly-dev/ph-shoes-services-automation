@@ -1,21 +1,27 @@
 # PH Shoes Services Automation
 
-Infrastructure automation for PH Shoes web/frontend services on AWS ECS.
+Infrastructure automation for PH Shoes web/frontend services on AWS ECS (EC2 launch type).
+
+## Architecture (high level)
+- ECS cluster on EC2 ASG (cost-optimized, scale-to-zero supported).
+- Services run on ECS tasks; routing via Cloudflare or Route53.
+- DNS updates via `auto-dns-update.yml` (Terraform in `terraform-dns/`).
+- Deployments via GitHub Actions workflows (OIDC → AWS).
 
 ## Structure
-- `terraform-core/` - Core AWS infrastructure (ECS, VPC, IAM, monitoring).
-- `terraform-dns/` - DNS automation.
-- `.github/workflows/` - CI workflows for apply/deploy/stop.
-- `nginx-services.conf` - Nginx routing config.
+- `terraform-core/` - VPC, ECS cluster/ASG, IAM, monitoring.
+- `terraform-service-deploy/` - ECS task/service deployment module.
+- `terraform-dns/` - DNS automation and service placement discovery.
+- `.github/workflows/` - Deploy, DNS, and scale workflows.
+- `nginx-services.conf` - Instance-level routing config.
 
-## Apply and Deploy
-- `terraform-core`: use the approved workflow-based plan/apply (no local apply).
-- `terraform-dns`: `auto-dns-update.yml`.
-- Services: `deploy-service.yml`, `deploy-all-services.yml`.
-- Stop services: `stop-all.yml`.
+## Workflows
+- Core infra: workflow-based plan/apply (no local apply).
+- DNS: `auto-dns-update.yml`.
+- Service deploy: `deploy-service.yml`, `deploy-all-services.yml`.
+- Scale down: `stop-all.yml`.
 
 Example:
 ```bash
-# Deploy a single service
-gh workflow run deploy-service.yml -f service_name=frontend -f image_tag=latest
+gh workflow run deploy-service.yml -f service=frontend -f image_uri=<ecr_image_uri>
 ```

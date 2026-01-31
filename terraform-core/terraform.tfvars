@@ -1,7 +1,7 @@
 ecs_instance_type = "t3.micro"
 ecs_desired_capacity = 3
 ecs_min_size         = 1
-ecs_max_size         = 3
+ecs_max_size         = 5
 ecs_cluster_name = "ph-shoes-services-ecs"
 
 frontend_memory_mb = 128

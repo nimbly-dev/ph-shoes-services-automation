@@ -6,7 +6,7 @@ on:
       desired_capacity:
         description: "ASG desired capacity"
         required: true
-        default: "3"
+        default: "5"
       min_size:
         description: "ASG minimum size"
         required: true

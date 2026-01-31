@@ -163,11 +163,6 @@ jobs:
               --arg snowflake_token "${{ secrets.SNOWFLAKE_TOKEN }}" \
               --arg log_level_root "${{ vars.LOG_LEVEL_ROOT }}" \
               --arg spring_jpa_show_sql "$SPRING_JPA_SHOW_SQL_VALUE" \
-              --arg cors_allowed_origins "${{ vars.CORS_ALLOWED_ORIGINS }}" \
-              --arg cors_allowed_methods "${{ vars.CORS_ALLOWED_METHODS }}" \
-              --arg cors_allowed_headers "${{ vars.CORS_ALLOWED_HEADERS }}" \
-              --arg cors_allow_credentials "${{ vars.CORS_ALLOW_CREDENTIALS }}" \
-              --arg cors_max_age "${{ vars.CORS_MAX_AGE }}" \
               --arg db_pool_max_size "${{ vars.DB_POOL_MAX_SIZE }}" \
               --arg db_pool_min_idle "${{ vars.DB_POOL_MIN_IDLE }}" \
               --arg db_pool_idle_timeout "${{ vars.DB_POOL_IDLE_TIMEOUT }}" \
@@ -211,11 +206,6 @@ jobs:
                 "SNOWFLAKE_TOKEN": $snowflake_token,
                 "LOG_LEVEL_ROOT": $log_level_root,
                 "SPRING_JPA_SHOW_SQL": $spring_jpa_show_sql,
-                "CORS_ALLOWED_ORIGINS": $cors_allowed_origins,
-                "CORS_ALLOWED_METHODS": $cors_allowed_methods,
-                "CORS_ALLOWED_HEADERS": $cors_allowed_headers,
-                "CORS_ALLOW_CREDENTIALS": $cors_allow_credentials,
-                "CORS_MAX_AGE": $cors_max_age,
                 "DB_POOL_MAX_SIZE": $db_pool_max_size,
                 "DB_POOL_MIN_IDLE": $db_pool_min_idle,
                 "DB_POOL_IDLE_TIMEOUT": $db_pool_idle_timeout,

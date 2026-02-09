@@ -237,21 +237,7 @@ jobs:
                 "VERIFICATION_LINK_BASE_URL": "https://accounts.phshoesproject.com/api/v1/verify/email",
                 "VERIFICATION_NOT_ME_URL": "https://accounts.phshoesproject.com/api/v1/verify/email/not-me",
                 "VERIFICATION_LINK": "https://accounts.phshoesproject.com/verify"
-              }' | jq -c . > env.json
-
-            # Only user-accounts should receive SES webhook + configuration-set settings.
-            if [ "$SERVICE" = "user-accounts" ]; then
-              jq -c '. + {
-                "NOTIFICATION_EMAIL_FROM": "PH Shoes <no-reply@phshoesproject.com>",
-                "SES_CONFIGURATION_SET": "ph-shoes-notifications",
-                "SES_WEBHOOK_ALLOWED_TOPICS": "arn:aws:sns:ap-southeast-1:101679083819:phshoes-ses-events",
-                "SES_WEBHOOK_ENABLED": "true",
-                "SES_WEBHOOK_VERIFY_SIGNATURE": "true",
-                "SES_WEBHOOK_AUTO_CONFIRM": "true"
-              }' env.json > env.tmp && mv env.tmp env.json
-            fi
-
-            echo "environment=$(cat env.json)" >> $GITHUB_OUTPUT
+              }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
           fi
 
       - name: Deploy via Terraform

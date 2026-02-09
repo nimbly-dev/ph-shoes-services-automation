@@ -55,7 +55,18 @@ data "aws_iam_policy_document" "sns_topic" {
   statement {
     sid       = "AllowOwnerAllActions"
     effect    = "Allow"
-    actions   = ["SNS:*"]
+    # SNS topic policies reject wildcards like "SNS:*" in some accounts/regions.
+    # Keep this explicit to avoid "Policy statement action out of service scope!".
+    actions = [
+      "SNS:GetTopicAttributes",
+      "SNS:SetTopicAttributes",
+      "SNS:AddPermission",
+      "SNS:RemovePermission",
+      "SNS:DeleteTopic",
+      "SNS:Subscribe",
+      "SNS:ListSubscriptionsByTopic",
+      "SNS:Publish",
+    ]
     resources = [aws_sns_topic.ses_events[0].arn]
 
     principals {
@@ -124,5 +135,4 @@ resource "aws_sns_topic_subscription" "webhook" {
 
   # Our webhook auto-confirms SNS subscriptions; don't block `apply` waiting on manual confirmation.
   endpoint_auto_confirms = true
-  confirmation_timeout_in_minutes = 10
 }

@@ -138,26 +138,6 @@ module "ecs_cluster" {
   tags                   = local.common_tags
 }
 
-resource "aws_security_group_rule" "frontend_http" {
-  type              = "ingress"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = module.ecs_cluster.instance_security_group_id
-}
-
-resource "aws_security_group_rule" "backend_services" {
-  type              = "ingress"
-  from_port         = 8082
-  to_port           = 8085
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = module.ecs_cluster.instance_security_group_id
-}
-
-
-
 module "cloudwatch_monitoring" {
   count  = var.enable_cloudwatch_monitoring ? 1 : 0
   source = "./modules/cloudwatch-monitoring"

@@ -136,25 +136,3 @@ resource "cloudflare_record" "text_search" {
   comment         = "Text search service routing - managed by terraform-dns workflow"
   allow_overwrite = true
 }
-
-# SPF is strongly recommended for SES deliverability and production-access reviews.
-resource "cloudflare_record" "spf" {
-  count           = var.use_cloudflare_dns ? 1 : 0
-  zone_id         = var.cloudflare_zone_id
-  name            = "@"
-  type            = "TXT"
-  content         = "v=spf1 include:amazonses.com -all"
-  ttl             = 1
-  proxied         = false
-  comment         = "SPF for SES (managed by terraform-dns workflow)"
-  allow_overwrite = true
-}
-
-resource "aws_route53_record" "spf" {
-  count   = var.use_cloudflare_dns ? 0 : 1
-  zone_id = data.aws_route53_zone.frontend.zone_id
-  name    = var.domain_name
-  type    = "TXT"
-  ttl     = 300
-  records = ["v=spf1 include:amazonses.com -all"]
-}

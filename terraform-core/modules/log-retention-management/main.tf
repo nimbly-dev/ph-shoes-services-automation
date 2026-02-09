@@ -56,10 +56,10 @@ locals {
 
 locals {
   cost_optimization_config = {
-    log_retention_days = var.log_retention_days
-    on_demand_focus    = var.on_demand_optimized
-    current_session_focus = true
-    historical_analysis_disabled = true
+    log_retention_days              = var.log_retention_days
+    on_demand_focus                 = var.on_demand_optimized
+    current_session_focus           = true
+    historical_analysis_disabled    = true
     estimated_monthly_log_volume_gb = 0.2
     estimated_monthly_cost_usd      = 0.01 # Well within free tier
     free_tier_usage_percentage      = 4    # 4% of 5GB free tier limit

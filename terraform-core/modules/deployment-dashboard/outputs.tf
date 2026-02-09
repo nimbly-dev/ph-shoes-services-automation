@@ -85,14 +85,14 @@ output "portfolio_demo_readiness_checklist" {
   value = {
     deployment_checks = [
       "All 5 services deployed",
-      "No failed deployments in last hour", 
+      "No failed deployments in last hour",
       "All containers started successfully",
       "Memory usage stable during startup"
     ]
     service_health_checks = [
       "Frontend SPA accessible (Port 80)",
       "User Accounts API responding (Port 8082)",
-      "Catalog API responding (Port 8083)", 
+      "Catalog API responding (Port 8083)",
       "Alerts API responding (Port 8084)",
       "Text Search API responding (Port 8085)"
     ]

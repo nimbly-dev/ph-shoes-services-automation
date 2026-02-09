@@ -18,7 +18,7 @@ locals {
   dashboard_properties = {
     region           = data.aws_region.current.name
     refresh_interval = var.dashboard_refresh_interval
-    period          = 300
+    period           = 300
   }
 }
 
@@ -37,7 +37,7 @@ resource "aws_cloudwatch_dashboard" "deployment_dashboard" {
         width  = 8
         height = 6
         properties = {
-          query = "SOURCE '/aws/ecs/containerinsights/${var.cluster_name}/performance' | fields @timestamp, @message, @logStream | filter @message like /deployment/ or @message like /task/ or @message like /service/ | filter @timestamp > date_sub(now(), interval 1 hour) | sort @timestamp desc | limit 20"
+          query  = "SOURCE '/aws/ecs/containerinsights/${var.cluster_name}/performance' | fields @timestamp, @message, @logStream | filter @message like /deployment/ or @message like /task/ or @message like /service/ | filter @timestamp > date_sub(now(), interval 1 hour) | sort @timestamp desc | limit 20"
           region = local.dashboard_properties.region
           title  = "Current Deployment Status (Last Hour)"
           view   = "table"
@@ -76,7 +76,7 @@ Check ECS console for detailed deployment status:
 - No deployment errors in last hour
 - Container startup completed successfully
 EOT
-          region = local.dashboard_properties.region
+          region   = local.dashboard_properties.region
         }
       },
 
@@ -88,7 +88,7 @@ EOT
         width  = 8
         height = 6
         properties = {
-          query = "SOURCE '${join("' | SOURCE '", [for s in local.services : s.log_group])}' | fields @timestamp, @message, @logStream | filter @message like /Starting/ or @message like /Started/ or @message like /Initializing/ or @message like /Ready/ | filter @timestamp > date_sub(now(), interval 30 minute) | sort @timestamp desc | limit 15"
+          query  = "SOURCE '${join("' | SOURCE '", [for s in local.services : s.log_group])}' | fields @timestamp, @message, @logStream | filter @message like /Starting/ or @message like /Started/ or @message like /Initializing/ or @message like /Ready/ | filter @timestamp > date_sub(now(), interval 30 minute) | sort @timestamp desc | limit 15"
           region = local.dashboard_properties.region
           title  = "Container Startup Logs (Last 30 Min)"
           view   = "table"
@@ -113,8 +113,8 @@ EOT
           title  = "Memory During Startup (Current Session - Last Hour)"
           period = local.dashboard_properties.period
           stat   = "Average"
-          start  = "-PT1H"  # Last 1 hour only
-          end    = "PT0H"   # Current time
+          start  = "-PT1H" # Last 1 hour only
+          end    = "PT0H"  # Current time
           yAxis = {
             left = {
               min = 0
@@ -159,7 +159,7 @@ EOT
 
 *Direct links to deployment-related resources*
 EOT
-          region = local.dashboard_properties.region
+          region   = local.dashboard_properties.region
         }
       },
       {
@@ -199,7 +199,7 @@ EOT
 
 **Status**: Check ECS console for current state
 EOT
-          region = local.dashboard_properties.region
+          region   = local.dashboard_properties.region
         }
       }
     ]

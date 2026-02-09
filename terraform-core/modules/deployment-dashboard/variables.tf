@@ -63,7 +63,7 @@ variable "log_retention_days" {
 variable "dashboard_refresh_interval" {
   description = "Dashboard refresh interval in seconds (API efficiency)"
   type        = number
-  default     = 300  # 5 minutes
+  default     = 300 # 5 minutes
 
   validation {
     condition     = var.dashboard_refresh_interval >= 300

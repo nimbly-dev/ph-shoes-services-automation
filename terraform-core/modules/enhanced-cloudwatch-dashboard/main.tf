@@ -321,7 +321,7 @@ resource "aws_cloudwatch_dashboard" "enhanced_observability" {
               ["AWS/ECS", "RunningTaskCount", "ClusterName", var.cluster_name],
               [".", "PendingTaskCount", ".", "."],
               [".", "ActiveServiceCount", ".", "."]
-            ], var.load_balancer_name != "" ? [
+              ], var.load_balancer_name != "" ? [
               ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", var.load_balancer_name]
             ] : [])
             view   = "timeSeries"

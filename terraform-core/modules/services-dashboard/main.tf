@@ -18,7 +18,7 @@ locals {
   dashboard_properties = {
     region           = data.aws_region.current.name
     refresh_interval = var.dashboard_refresh_interval
-    period          = 300
+    period           = 300
   }
 }
 
@@ -46,8 +46,8 @@ resource "aws_cloudwatch_dashboard" "services_dashboard" {
           title  = "Current Memory Usage (t3.micro) - Last 2 Hours"
           period = local.dashboard_properties.period
           stat   = "Average"
-          start  = "-PT2H"  # Last 2 hours only
-          end    = "PT0H"   # Current time
+          start  = "-PT2H" # Last 2 hours only
+          end    = "PT0H"  # Current time
           yAxis = {
             left = {
               min = 0
@@ -75,7 +75,7 @@ resource "aws_cloudwatch_dashboard" "services_dashboard" {
           }
         }
       },
-      
+
       # Widget 2: Memory Status Indicator with visual feedback
       {
         type   = "text"
@@ -102,7 +102,7 @@ resource "aws_cloudwatch_dashboard" "services_dashboard" {
 - Each service should use <200MB typically
 - Monitor for gradual memory increases
 EOT
-          region = local.dashboard_properties.region
+          region   = local.dashboard_properties.region
         }
       },
 
@@ -128,7 +128,7 @@ EOT
 
 *Links open CloudWatch Logs with recent entries*
 EOT
-          region = local.dashboard_properties.region
+          region   = local.dashboard_properties.region
         }
       },
 
@@ -140,7 +140,7 @@ EOT
         width  = 12
         height = 6
         properties = {
-          query = "SOURCE '${join("' | SOURCE '", [for s in local.services : s.log_group])}' | fields @timestamp, @message, @logStream | filter @message like /ERROR/ or @message like /Exception/ or @message like /FATAL/ | filter @timestamp > date_sub(now(), interval 2 hour) | sort @timestamp desc | limit 20"
+          query  = "SOURCE '${join("' | SOURCE '", [for s in local.services : s.log_group])}' | fields @timestamp, @message, @logStream | filter @message like /ERROR/ or @message like /Exception/ or @message like /FATAL/ | filter @timestamp > date_sub(now(), interval 2 hour) | sort @timestamp desc | limit 20"
           region = local.dashboard_properties.region
           title  = "Recent Error Logs (Last 2 Hours)"
           view   = "table"
@@ -156,7 +156,7 @@ EOT
         height = 6
         properties = {
           metrics = concat([
-            for service in var.service_names : 
+            for service in var.service_names :
             ["AWS/ECS", "RunningTaskCount", "ServiceName", service, "ClusterName", var.cluster_name]
           ])
           view   = "singleValue"
@@ -201,7 +201,7 @@ EOT
 
 **Need Help?** Check ECS console for detailed task information.
 EOT
-          region = local.dashboard_properties.region
+          region   = local.dashboard_properties.region
         }
       }
     ]

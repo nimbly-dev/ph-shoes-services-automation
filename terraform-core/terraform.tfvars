@@ -1,8 +1,8 @@
-ecs_instance_type = "t3.micro"
+ecs_instance_type    = "t3.micro"
 ecs_desired_capacity = 3
 ecs_min_size         = 1
 ecs_max_size         = 5
-ecs_cluster_name = "ph-shoes-services-ecs"
+ecs_cluster_name     = "ph-shoes-services-ecs"
 
 frontend_memory_mb = 128
 backend_memory_mb  = 400
@@ -88,3 +88,14 @@ additional_ecr_repositories = [
     description = "Spring Boot web module image for alerts scheduler"
   }
 ]
+
+# --- SES -> SNS bounce/complaint workflow (user registration email hygiene) ---
+# Keep SES event delivery working after migrating away from Render.
+extraction_ses_enable_event_destination = true
+extraction_ses_configuration_set_name   = "ph-shoes-notifications"
+extraction_ses_event_destination_name   = "phshoes-nevents"
+extraction_ses_sns_topic_name           = "phshoes-ses-events"
+extraction_ses_webhook_endpoint         = "https://accounts.phshoesproject.com/api/v1/internal/webhooks/ses"
+
+# Align From address with verified SES identity (phshoesproject.com).
+extraction_accounts_service_ses_from_address = "no-reply@phshoesproject.com"

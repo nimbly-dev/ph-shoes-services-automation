@@ -34,7 +34,7 @@ output "dns_records_created" {
       "alerts.phshoesproject.com -> ${data.external.service_placement.result.alerts_ip} (alerts)",
       "text-search.phshoesproject.com -> ${data.external.service_placement.result.text_search_ip} (text-search)"
     ]
-  } : {
+    } : {
     route53_records = [
       "phshoesproject.com -> ${data.external.service_placement.result.frontend_ip} (frontend)",
       "accounts.phshoesproject.com -> ${data.external.service_placement.result.accounts_ip} (user-accounts)",

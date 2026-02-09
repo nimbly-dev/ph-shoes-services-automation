@@ -149,7 +149,7 @@ resource "aws_security_group_rule" "frontend_http" {
 
 resource "aws_security_group_rule" "backend_services" {
   type              = "ingress"
-  from_port         = 8081
+  from_port         = 8082
   to_port           = 8085
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
@@ -191,15 +191,15 @@ module "enhanced_cloudwatch_dashboard" {
   count  = var.enable_enhanced_cloudwatch_dashboard ? 1 : 0
   source = "./modules/enhanced-cloudwatch-dashboard"
 
-  cluster_name           = var.ecs_cluster_name
-  service_names          = var.monitored_services
-  autoscaling_group_name = module.ecs_cluster.autoscaling_group_name
-  load_balancer_name     = var.enhanced_dashboard_load_balancer_name
-  alarm_actions          = var.enable_cloudwatch_monitoring ? [module.cloudwatch_monitoring[0].sns_topic_arn] : []
-  log_retention_days         = var.enhanced_dashboard_log_retention_days
-  dashboard_refresh_interval = var.enhanced_dashboard_refresh_interval
-  max_widget_count           = var.enhanced_dashboard_max_widgets
-  api_request_budget         = var.enhanced_dashboard_api_budget
+  cluster_name                     = var.ecs_cluster_name
+  service_names                    = var.monitored_services
+  autoscaling_group_name           = module.ecs_cluster.autoscaling_group_name
+  load_balancer_name               = var.enhanced_dashboard_load_balancer_name
+  alarm_actions                    = var.enable_cloudwatch_monitoring ? [module.cloudwatch_monitoring[0].sns_topic_arn] : []
+  log_retention_days               = var.enhanced_dashboard_log_retention_days
+  dashboard_refresh_interval       = var.enhanced_dashboard_refresh_interval
+  max_widget_count                 = var.enhanced_dashboard_max_widgets
+  api_request_budget               = var.enhanced_dashboard_api_budget
   enable_cost_tracking             = var.enable_cost_tracking
   enable_free_tier_monitoring      = var.enable_enhanced_free_tier_monitoring
   enable_security_monitoring       = var.enable_enhanced_security_monitoring
@@ -235,9 +235,9 @@ module "deployment_dashboard" {
   count  = var.enable_deployment_dashboard ? 1 : 0
   source = "./modules/deployment-dashboard"
 
-  cluster_name           = var.ecs_cluster_name
-  service_names          = var.monitored_services
-  autoscaling_group_name = module.ecs_cluster.autoscaling_group_name
+  cluster_name               = var.ecs_cluster_name
+  service_names              = var.monitored_services
+  autoscaling_group_name     = module.ecs_cluster.autoscaling_group_name
   deployment_timeout_minutes = var.deployment_dashboard_timeout_minutes
   startup_timeout_minutes    = var.deployment_dashboard_startup_timeout_minutes
   memory_startup_threshold   = var.deployment_dashboard_memory_startup_threshold
@@ -262,7 +262,7 @@ module "simplified_cloudwatch_queries" {
   count  = var.enable_simplified_cloudwatch_queries ? 1 : 0
   source = "./modules/simplified-cloudwatch-queries"
 
-  cluster_name = var.ecs_cluster_name
+  cluster_name              = var.ecs_cluster_name
   log_retention_days        = var.log_retention_days
   enable_startup_monitoring = var.simplified_queries_enable_startup_monitoring
   enable_error_monitoring   = var.simplified_queries_enable_error_monitoring
@@ -287,11 +287,11 @@ module "account_iam" {
 }
 
 module "ses_send" {
-  source              = "./ses"
-  aws_region          = var.aws_region
-  service_name        = var.extraction_service_name
-  attach_to_role_name = module.account_iam.role_name
-  restrict_to_region  = true
+  source                   = "./ses"
+  aws_region               = var.aws_region
+  service_name             = var.extraction_service_name
+  attach_to_role_name      = module.account_iam.role_name
+  restrict_to_region       = true
   enable_event_destination = var.extraction_ses_enable_event_destination
   configuration_set_name   = var.extraction_ses_configuration_set_name
   event_destination_name   = var.extraction_ses_event_destination_name
@@ -343,7 +343,7 @@ module "migration_versions_table" {
   read_capacity                 = var.extraction_migration_table_read_capacity
   write_capacity                = var.extraction_migration_table_write_capacity
   enable_point_in_time_recovery = var.extraction_migration_table_enable_point_in_time_recovery
-  tags                           = local.extraction_tags
+  tags                          = local.extraction_tags
 }
 
 

@@ -24,9 +24,9 @@ variable "memory_thresholds" {
     critical = number
   })
   default = {
-    normal   = 70  # Green indicator
-    warning  = 80  # Yellow indicator
-    critical = 95  # Red indicator
+    normal   = 70 # Green indicator
+    warning  = 80 # Yellow indicator
+    critical = 95 # Red indicator
   }
 }
 
@@ -39,7 +39,7 @@ variable "log_retention_days" {
 variable "dashboard_refresh_interval" {
   description = "Dashboard refresh interval in seconds (API efficiency)"
   type        = number
-  default     = 300  # 5 minutes
+  default     = 300 # 5 minutes
 }
 
 variable "on_demand_optimized" {

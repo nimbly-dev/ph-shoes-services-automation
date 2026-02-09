@@ -24,18 +24,18 @@ output "ecs_log_groups" {
 output "cost_optimization_summary" {
   description = "Summary of cost optimization settings and estimated usage"
   value = {
-    log_retention_days             = var.log_retention_days
-    total_log_groups_managed       = length(local.service_log_groups) + length(local.ecs_log_groups)
-    on_demand_optimized           = var.on_demand_optimized
-    estimated_monthly_volume_gb   = 0.2
-    estimated_monthly_cost_usd    = 0.01
-    free_tier_usage_percentage    = "4% of 5GB limit"
-    
+    log_retention_days          = var.log_retention_days
+    total_log_groups_managed    = length(local.service_log_groups) + length(local.ecs_log_groups)
+    on_demand_optimized         = var.on_demand_optimized
+    estimated_monthly_volume_gb = 0.2
+    estimated_monthly_cost_usd  = 0.01
+    free_tier_usage_percentage  = "4% of 5GB limit"
+
     optimization_features = {
-      short_retention_period    = "${var.log_retention_days} days (vs 30+ days default)"
-      current_session_focus     = "Optimized for on-demand usage"
-      historical_analysis       = "Disabled to reduce costs"
-      api_request_optimization  = "5-minute refresh intervals"
+      short_retention_period   = "${var.log_retention_days} days (vs 30+ days default)"
+      current_session_focus    = "Optimized for on-demand usage"
+      historical_analysis      = "Disabled to reduce costs"
+      api_request_optimization = "5-minute refresh intervals"
     }
   }
 }

@@ -205,7 +205,7 @@ variable "ecs_max_size" {
 }
 
 variable "ecs_desired_capacity" {
-  type    = number
+  type = number
 }
 
 variable "ecs_instance_key_name" {
@@ -653,7 +653,7 @@ variable "extraction_accounts_service_name_prefix" {
 variable "extraction_accounts_service_ses_from_address" {
   description = "Verified SES From address used by the user-accounts service."
   type        = string
-  default     = "no-reply@ph-shoes.app"
+  default     = "no-reply@phshoesproject.com"
 }
 
 variable "extraction_accounts_service_create_access_key" {

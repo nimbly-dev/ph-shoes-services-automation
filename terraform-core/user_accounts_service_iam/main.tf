@@ -20,7 +20,7 @@ resource "aws_iam_user" "svc" {
 data "aws_iam_policy_document" "ddb" {
   # Introspection (safe on "*")
   statement {
-    sid     = "Introspect"
+    sid = "Introspect"
     actions = [
       "dynamodb:ListTables",
       "dynamodb:DescribeTable",
@@ -40,7 +40,7 @@ data "aws_iam_policy_document" "ddb" {
 
   # Allow updating existing tables/GSIs and tagging
   statement {
-    sid     = "UpdateTablesAndTags"
+    sid = "UpdateTablesAndTags"
     actions = [
       "dynamodb:UpdateTable",
       "dynamodb:UpdateTimeToLive",
@@ -55,7 +55,7 @@ data "aws_iam_policy_document" "ddb" {
 
   # Data operations on all tables/GSIs in region
   statement {
-    sid     = "DataOpsAllTables"
+    sid = "DataOpsAllTables"
     actions = [
       "dynamodb:GetItem",
       "dynamodb:PutItem",

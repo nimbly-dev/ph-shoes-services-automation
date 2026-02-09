@@ -19,12 +19,12 @@ data "aws_route53_zone" "frontend" {
 # Data source to get running tasks and their placement using external script
 data "external" "service_placement" {
   program = ["bash", "${path.module}/get-service-placement.sh"]
-  
+
   # Add query parameters to force refresh when services change
   query = {
     # Force refresh by including current timestamp and task count
     refresh_trigger = "${timestamp()}"
-    cluster_name = "ph-shoes-services-ecs"
+    cluster_name    = "ph-shoes-services-ecs"
   }
 }
 
@@ -79,11 +79,11 @@ resource "aws_route53_record" "text_search" {
 resource "cloudflare_record" "frontend" {
   count           = var.use_cloudflare_dns ? 1 : 0
   zone_id         = var.cloudflare_zone_id
-  name            = "@"  # @ represents the root domain
+  name            = "@" # @ represents the root domain
   type            = "A"
   content         = data.external.service_placement.result.frontend_ip
-  ttl             = 1     # TTL must be 1 when proxied=true (automatic)
-  proxied         = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
+  ttl             = 1    # TTL must be 1 when proxied=true (automatic)
+  proxied         = true # Enable Cloudflare proxy for SSL, DDoS protection, and caching
   comment         = "Frontend service routing - managed by terraform-dns workflow"
   allow_overwrite = true
 }
@@ -95,8 +95,8 @@ resource "cloudflare_record" "accounts" {
   name            = "accounts"
   type            = "A"
   content         = data.external.service_placement.result.accounts_ip
-  ttl             = 1     # TTL must be 1 when proxied=true (automatic)
-  proxied         = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
+  ttl             = 1    # TTL must be 1 when proxied=true (automatic)
+  proxied         = true # Enable Cloudflare proxy for SSL, DDoS protection, and caching
   comment         = "User accounts service routing - managed by terraform-dns workflow"
   allow_overwrite = true
 }
@@ -107,8 +107,8 @@ resource "cloudflare_record" "catalog" {
   name            = "catalog"
   type            = "A"
   content         = data.external.service_placement.result.catalog_ip
-  ttl             = 1     # TTL must be 1 when proxied=true (automatic)
-  proxied         = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
+  ttl             = 1    # TTL must be 1 when proxied=true (automatic)
+  proxied         = true # Enable Cloudflare proxy for SSL, DDoS protection, and caching
   comment         = "Catalog service routing - managed by terraform-dns workflow"
   allow_overwrite = true
 }
@@ -119,8 +119,8 @@ resource "cloudflare_record" "alerts" {
   name            = "alerts"
   type            = "A"
   content         = data.external.service_placement.result.alerts_ip
-  ttl             = 1     # TTL must be 1 when proxied=true (automatic)
-  proxied         = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
+  ttl             = 1    # TTL must be 1 when proxied=true (automatic)
+  proxied         = true # Enable Cloudflare proxy for SSL, DDoS protection, and caching
   comment         = "Alerts service routing - managed by terraform-dns workflow"
   allow_overwrite = true
 }
@@ -131,8 +131,30 @@ resource "cloudflare_record" "text_search" {
   name            = "text-search"
   type            = "A"
   content         = data.external.service_placement.result.text_search_ip
-  ttl             = 1     # TTL must be 1 when proxied=true (automatic)
-  proxied         = true  # Enable Cloudflare proxy for SSL, DDoS protection, and caching
+  ttl             = 1    # TTL must be 1 when proxied=true (automatic)
+  proxied         = true # Enable Cloudflare proxy for SSL, DDoS protection, and caching
   comment         = "Text search service routing - managed by terraform-dns workflow"
   allow_overwrite = true
+}
+
+# SPF is strongly recommended for SES deliverability and production-access reviews.
+resource "cloudflare_record" "spf" {
+  count           = var.use_cloudflare_dns ? 1 : 0
+  zone_id         = var.cloudflare_zone_id
+  name            = "@"
+  type            = "TXT"
+  content         = "v=spf1 include:amazonses.com -all"
+  ttl             = 1
+  proxied         = false
+  comment         = "SPF for SES (managed by terraform-dns workflow)"
+  allow_overwrite = true
+}
+
+resource "aws_route53_record" "spf" {
+  count   = var.use_cloudflare_dns ? 0 : 1
+  zone_id = data.aws_route53_zone.frontend.zone_id
+  name    = var.domain_name
+  type    = "TXT"
+  ttl     = 300
+  records = ["v=spf1 include:amazonses.com -all"]
 }

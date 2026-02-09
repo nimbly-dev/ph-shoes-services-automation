@@ -5,7 +5,7 @@ provider "aws" {
 locals {
   # Calculate available memory after system buffer
   available_memory_mb = var.max_total_memory_mb - var.system_buffer_mb
-  
+
   # Memory validation
   memory_exceeds_limit = var.memory > local.available_memory_mb
 }
@@ -13,7 +13,7 @@ locals {
 # Memory validation check
 resource "null_resource" "memory_validation" {
   count = local.memory_exceeds_limit ? 1 : 0
-  
+
   provisioner "local-exec" {
     command = "echo 'ERROR: Memory allocation ${var.memory}MB exceeds available capacity ${local.available_memory_mb}MB (${var.max_total_memory_mb}MB total - ${var.system_buffer_mb}MB system buffer)' && exit 1"
   }

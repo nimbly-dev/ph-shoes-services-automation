@@ -283,7 +283,7 @@ resource "aws_cloudwatch_query_definition" "container_logs_access" {
 
   log_group_names = [
     "/backend/user-accounts",
-    "/backend/catalog", 
+    "/backend/catalog",
     "/backend/alerts",
     "/backend/text-search",
     "/frontend"
@@ -303,7 +303,7 @@ resource "aws_cloudwatch_query_definition" "ecs_deployment_events" {
   log_group_names = [
     "/backend/user-accounts",
     "/backend/catalog",
-    "/backend/alerts", 
+    "/backend/alerts",
     "/backend/text-search",
     "/frontend"
   ]

@@ -121,4 +121,7 @@ resource "aws_sns_topic_subscription" "webhook" {
   topic_arn = aws_sns_topic.ses_events[0].arn
   protocol  = "https"
   endpoint  = var.webhook_endpoint
+
+  # Our webhook auto-confirms SNS subscriptions; don't block `apply` waiting on manual confirmation.
+  endpoint_auto_confirms = true
 }

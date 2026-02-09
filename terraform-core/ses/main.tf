@@ -55,7 +55,7 @@ data "aws_iam_policy_document" "sns_topic" {
   statement {
     sid       = "AllowOwnerAllActions"
     effect    = "Allow"
-    actions   = ["sns:*"]
+    actions   = ["SNS:*"]
     resources = [aws_sns_topic.ses_events[0].arn]
 
     principals {
@@ -67,7 +67,7 @@ data "aws_iam_policy_document" "sns_topic" {
   statement {
     sid     = "AllowSESPublishFromConfigSet"
     effect  = "Allow"
-    actions = ["sns:Publish"]
+    actions = ["SNS:Publish"]
 
     principals {
       type        = "Service"
@@ -124,4 +124,5 @@ resource "aws_sns_topic_subscription" "webhook" {
 
   # Our webhook auto-confirms SNS subscriptions; don't block `apply` waiting on manual confirmation.
   endpoint_auto_confirms = true
+  confirmation_timeout_in_minutes = 10
 }

@@ -135,4 +135,5 @@ resource "aws_sns_topic_subscription" "webhook" {
 
   # Our webhook auto-confirms SNS subscriptions; don't block `apply` waiting on manual confirmation.
   endpoint_auto_confirms = true
+  confirmation_timeout_in_minutes = 10
 }

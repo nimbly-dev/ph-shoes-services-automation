@@ -233,6 +233,8 @@ jobs:
                 "OPENAI_API_KEY": $openai_api_key,
                 "OPENAI_ORG_ID": $openai_org_id,
                 "OPENAI_PROJECT_ID": $openai_project_id,
+                "APP_FRONTEND_BASE_URL": "https://phshoesproject.com",
+                "APP_FRONTEND_VERIFY_PATH": "/",
                 "NOTIFICATION_UNSUBSCRIBE_LINK": "https://accounts.phshoesproject.com/api/v1/user-accounts/unsubscribe",
                 "NOTIFICATION_LIST_UNSUBSCRIBE": "<mailto:unsubscribe@phshoesproject.com>",
                 "VERIFICATION_NOT_ME_URL": "https://accounts.phshoesproject.com/api/v1/verify/email/not-me",

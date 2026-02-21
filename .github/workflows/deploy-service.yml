@@ -234,9 +234,9 @@ jobs:
                 "OPENAI_ORG_ID": $openai_org_id,
                 "OPENAI_PROJECT_ID": $openai_project_id,
                 "NOTIFICATION_UNSUBSCRIBE_LINK": "https://accounts.phshoesproject.com/api/v1/user-accounts/unsubscribe",
-                "VERIFICATION_LINK_BASE_URL": "https://accounts.phshoesproject.com/api/v1/verify/email",
+                "NOTIFICATION_LIST_UNSUBSCRIBE": "<mailto:unsubscribe@phshoesproject.com>",
                 "VERIFICATION_NOT_ME_URL": "https://accounts.phshoesproject.com/api/v1/verify/email/not-me",
-                "VERIFICATION_LINK": "https://accounts.phshoesproject.com/verify"
+                "VERIFICATION_LINK": "https://accounts.phshoesproject.com/api/v1/verify/email"
               }' | jq -c . | sed 's/^/environment=/' >> $GITHUB_OUTPUT
           fi
 

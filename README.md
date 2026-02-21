@@ -8,6 +8,13 @@ Infrastructure automation for PH Shoes web/frontend services on AWS ECS (EC2 lau
 - DNS updates via `auto-dns-update.yml` (Terraform in `terraform-dns/`).
 - Deployments via GitHub Actions workflows (OIDC → AWS).
 
+## Architecture Diagram
+![PH Shoes Backend Services Architecture](images/ph-shoes-backend-services-architecture.png)
+
+Domain handling (current):
+- DNS resolution: Browser queries Cloudflare DNS for `phshoesproject.com`, then receives ECS public IP(s).
+- Request routing: Browser request flows through Cloudflare proxy to ECS instance Nginx, then Nginx routes to service containers.
+
 ## Structure
 - `terraform-core/` - VPC, ECS cluster/ASG, IAM, monitoring.
 - `terraform-service-deploy/` - ECS task/service deployment module.
